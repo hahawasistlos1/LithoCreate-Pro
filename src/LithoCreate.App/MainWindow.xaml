@@ -1,0 +1,359 @@
+<Window x:Class="LithoCreate.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LithoCreate.App" xmlns:controls="clr-namespace:LithoCreate.App.Controls" xmlns:core="clr-namespace:LithoCreate.Core;assembly=LithoCreate.Core" Title="{Binding WindowTitle}" Background="#060F19" Foreground="#EAF5FF" FontFamily="Segoe UI" FontSize="13" Width="1400" Height="900" MinWidth="960" MinHeight="540" Icon="/LithoCreate Pro;component/Assets/LithoCreate.ico" WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="OnDrop">
+ <Window.Resources>
+  <BooleanToVisibilityConverter x:Key="Bool"/><local:InverseVisibilityConverter x:Key="Not"/>
+  <local:StepBrushConverter x:Key="StepBrush"/>
+  <local:ShapeThumbnailConverter x:Key="ShapeThumbnail"/>
+  <Style x:Key="Section" TargetType="TextBlock"><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,14,0,8"/></Style>
+  <DataTemplate x:Key="ShapeCard">
+   <Button Command="{Binding DataContext.SelectTemplate,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Width="172" Height="146" Margin="0,0,14,14" Padding="10" ToolTip="{Binding Description}">
+    <StackPanel><Image Source="{Binding Shape,Converter={StaticResource ShapeThumbnail}}" Height="77" Width="140" Stretch="Uniform" Margin="0,0,0,5"/><TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap"/><TextBlock Text="{Binding Category}" Foreground="#789BB3" FontSize="11" HorizontalAlignment="Center" Margin="0,5,0,0"/></StackPanel>
+   </Button>
+  </DataTemplate>
+  <DataTemplate x:Key="RecentCard">
+   <Border Style="{StaticResource Panel}" Width="260" Margin="0,0,14,14" Padding="12">
+    <StackPanel><Button Command="{Binding DataContext.OpenRecent,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Padding="0" Height="125" ToolTip="Projekt öffnen"><Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/></Button><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,9,0,4" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding Modified}" Style="{StaticResource Muted}" FontSize="11"/>
+     <WrapPanel Margin="0,8,0,0"><Button Content="Kopie" Padding="8,6" Margin="0,0,5,0" Command="{Binding DataContext.Duplicate,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/><Button Content="Umbenennen" Padding="8,6" Margin="0,0,5,0" Command="{Binding DataContext.Rename,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/><Button Content="×" ToolTip="Projekt löschen" Padding="8,6" Command="{Binding DataContext.Delete,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/></WrapPanel>
+    </StackPanel>
+   </Border>
+  </DataTemplate>
+ </Window.Resources>
+ <Window.InputBindings>
+  <KeyBinding Key="Z" Modifiers="Control+Alt" Command="{Binding UndoPrintLayout}"/><KeyBinding Key="Y" Modifiers="Control+Alt" Command="{Binding RedoPrintLayout}"/>
+  <KeyBinding Key="S" Modifiers="Control" Command="{Binding Save}"/><KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAs}"/><KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenProject}"/><KeyBinding Key="N" Modifiers="Control" Command="{Binding New}"/><KeyBinding Key="Z" Modifiers="Control" Command="{Binding Undo}"/><KeyBinding Key="Y" Modifiers="Control" Command="{Binding Redo}"/>
+ </Window.InputBindings>
+ <Grid>
+  <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="*"/><RowDefinition Height="35"/></Grid.RowDefinitions>
+  <Border Grid.Row="0" BorderBrush="#25475C" BorderThickness="0,0,0,1" Background="#08131F">
+   <Grid Margin="22,0"><StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Image Source="/LithoCreate Pro;component/Assets/LithoCreate.png" Width="36" Height="36" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="LithoCreate" FontSize="21" FontWeight="Bold" VerticalAlignment="Center"/><TextBlock Text=" Pro" FontSize="21" FontWeight="Bold" Foreground="#05BFFE" VerticalAlignment="Center"/><Border Background="#123247" CornerRadius="4" Padding="7,3" Margin="16,0,0,0" VerticalAlignment="Center"><TextBlock Text="OFFLINE STUDIO" FontSize="9" Foreground="#80CCE9"/></Border></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"><TextBlock Text="●  Lokal &amp; privat" Foreground="#81A8B9" Margin="0,0,22,0" VerticalAlignment="Center"/><Button Content="Projekt öffnen" Command="{Binding OpenProject}" Padding="12,7" Margin="0,0,8,0"/><Button Content="▣  Speichern" Command="{Binding Save}" Padding="14,7" Style="{StaticResource Primary}"/></StackPanel></Grid>
+  </Border>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="198"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Border Background="#081521" BorderBrush="#1C3649" BorderThickness="0,0,1,0">
+    <DockPanel Margin="12,18,12,18">
+     <StackPanel DockPanel.Dock="Bottom"><Border Background="#0D2332" CornerRadius="8" Padding="12" Margin="0,0,0,15"><StackPanel><TextBlock Text="DEIN MOMENT. DEIN LICHT." FontSize="9" Foreground="#63C3E8"/><TextBlock Text="Aus Erinnerungen wird Licht." TextWrapping="Wrap" FontSize="13" Margin="0,7,0,0"/></StackPanel></Border><TextBlock Text="{x:Static local:AppInfo.VersionLabel}" Foreground="#607F94" FontSize="10" HorizontalAlignment="Center"/></StackPanel>
+     <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
+      <TextBlock Text="ARBEITSBEREICH" FontSize="10" Foreground="#5D819A" Margin="14,0,0,13"/>
+      <Button Content="⌂   Startseite" Command="{Binding Navigate}" CommandParameter="Home" Style="{StaticResource Nav}"/>
+      <Button Content="＋   Neues Projekt" Command="{Binding New}" Style="{StaticResource Nav}"/>
+      <Button Content="▱   Meine Projekte" Command="{Binding Navigate}" CommandParameter="Projects" Style="{StaticResource Nav}"/>
+      <Button Content="◇   STL &amp; Module" Click="OpenMeshTools" Style="{StaticResource Nav}" FontSize="12"/>
+      <Button Content="▦   Vorlagen" Command="{Binding Navigate}" CommandParameter="Templates" Style="{StaticResource Nav}"/>
+      <Border Height="1" Background="#1C3649" Margin="10,17"/>
+      <Button Content="⚙   Einstellungen" Command="{Binding Navigate}" CommandParameter="Settings" Style="{StaticResource Nav}"/>
+      <Button Content="ⓘ   Hilfe &amp; Informationen" Command="{Binding Navigate}" CommandParameter="Help" Style="{StaticResource Nav}" FontSize="12"/>
+      <Border Height="1" Background="#1C3649" Margin="10,17"/>
+      <TextBlock Text="AKTUELLES PROJEKT" FontSize="10" Foreground="#5D819A" Margin="14,0,0,8"/>
+      <TextBlock Text="{Binding Project.Name}" TextWrapping="Wrap" Margin="14,0,10,8" FontWeight="SemiBold"/>
+      <Button Content="◈   Im Editor öffnen" Command="{Binding Navigate}" CommandParameter="Editor" Style="{StaticResource Nav}"/>
+      <Button Content="Speichern unter …" Command="{Binding SaveAs}" Style="{StaticResource Nav}" FontSize="12"/>
+     </StackPanel></ScrollViewer>
+    </DockPanel>
+   </Border>
+   <Grid Grid.Column="1" Margin="26,22,26,18">
+    <!-- Startseite -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsHome,Converter={StaticResource Bool}}">
+     <StackPanel>
+      <TextBlock Text="DEIN OFFLINE-LITHOPHANIESTUDIO" FontSize="10" Foreground="#15BFFF" Margin="0,0,0,10"/>
+      <TextBlock Text="Erinnerungen, die leuchten." FontSize="34" FontWeight="SemiBold" Margin="0,0,0,8"/>
+      <TextBlock Text="Verwandle deine Fotos in persönliche, 3D-druckbare Lithophanien. Ganz auf deinem Computer." Style="{StaticResource Muted}" Margin="0,0,0,24"/>
+      <Grid Margin="0,0,0,26"><Grid.ColumnDefinitions><ColumnDefinition Width="1.5*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+       <Border CornerRadius="12" BorderBrush="#0874A6" BorderThickness="1" Padding="28" Margin="0,0,16,0"><Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#103C58"/><GradientStop Color="#081C2C" Offset="1"/></LinearGradientBrush></Border.Background><Grid><StackPanel><TextBlock Text="Dein nächstes Lieblingsstück" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="Ein Foto. Deine Form. Unzählige Möglichkeiten." Foreground="#A2BDCE" Margin="0,10,0,22" TextWrapping="Wrap"/><Button Content="＋   Neues Projekt erstellen" Command="{Binding New}" Style="{StaticResource Primary}" HorizontalAlignment="Left" Padding="22,12"/><TextBlock Text="JPG · PNG · BMP · TIFF · WebP¹" FontSize="11" Foreground="#709BB5" Margin="0,14,0,0"/></StackPanel></Grid></Border>
+       <Border Grid.Column="1" Style="{StaticResource Panel}" Padding="24"><StackPanel><TextBlock Text="✧" FontSize="38" Foreground="#72D5FF"/><TextBlock Text="Für Licht gemacht." FontSize="20" FontWeight="SemiBold" Margin="0,10,0,8"/><TextBlock Text="Echte Wandstärken. Interaktive 3D-Vorschau. Geprüfte STL- und 3MF-Dateien für deinen Slicer." Style="{StaticResource Muted}"/><Button Content="▦   Alle Vorlagen entdecken  →" Command="{Binding Navigate}" CommandParameter="Templates" Margin="0,18,0,0"/></StackPanel></Border>
+      </Grid>
+      <Grid Margin="0,0,0,14"><TextBlock Text="Welche Form hat deine Idee?" FontSize="20" FontWeight="SemiBold"/><Button Content="Alle Formen  →" Command="{Binding Navigate}" CommandParameter="Templates" HorizontalAlignment="Right" Padding="10,5" Margin="0"/></Grid>
+      <ItemsControl x:Name="QuickShapes" ItemTemplate="{StaticResource ShapeCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+      <Border Style="{StaticResource Panel}" Padding="20,16" Margin="0,6,0,24"><StackPanel><TextBlock Text="IN FÜNF SCHRITTEN ZUM LITHOPHAN" FontSize="10" Foreground="#6DB9DC" Margin="0,0,0,13"/><UniformGrid Columns="5"><TextBlock Text="①  Foto laden   →"/><TextBlock Text="②  Form wählen   →"/><TextBlock Text="③  Einstellungen   →"/><TextBlock Text="④  3D-Vorschau   →"/><TextBlock Text="⑤  STL / 3MF exportieren"/></UniformGrid></StackPanel></Border>
+      <TextBlock Text="Zuletzt gespeichert" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,14"/>
+      <TextBlock Text="Deine gespeicherten Projekte erscheinen hier mit Vorschaubild." Style="{StaticResource Muted}" Margin="0,0,0,12"/>
+      <ItemsControl ItemsSource="{Binding Recent}" ItemTemplate="{StaticResource RecentCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+     </StackPanel>
+    </ScrollViewer>
+    <!-- Projekteditor -->
+    <Grid Visibility="{Binding IsEditor,Converter={StaticResource Bool}}">
+     <Grid.RowDefinitions><RowDefinition Height="65"/><RowDefinition x:Name="EditorTitleRow" Height="78"/><RowDefinition Height="*"/><RowDefinition Height="56"/></Grid.RowDefinitions>
+     <Grid Grid.Row="0"><UniformGrid Columns="5" VerticalAlignment="Top">
+      <Button Command="{Binding GoStep}" CommandParameter="1" Background="{Binding Step,Converter={StaticResource StepBrush},ConverterParameter=1}" Margin="0,0,7,0" Padding="8,12"><TextBlock Text="①   Foto bearbeiten"/></Button>
+      <Button Command="{Binding GoStep}" CommandParameter="2" Background="{Binding Step,Converter={StaticResource StepBrush},ConverterParameter=2}" Margin="0,0,7,0" Padding="8,12"><TextBlock Text="②   Form &amp; Vorlage"/></Button>
+      <Button Command="{Binding GoStep}" CommandParameter="3" Background="{Binding Step,Converter={StaticResource StepBrush},ConverterParameter=3}" Margin="0,0,7,0" Padding="8,12"><TextBlock Text="③   Einstellungen"/></Button>
+      <Button Command="{Binding GoStep}" CommandParameter="4" Background="{Binding Step,Converter={StaticResource StepBrush},ConverterParameter=4}" Margin="0,0,7,0" Padding="8,12"><TextBlock Text="④   Vorschau"/></Button>
+      <Button Command="{Binding GoStep}" CommandParameter="5" Background="{Binding Step,Converter={StaticResource StepBrush},ConverterParameter=5}" Margin="0" Padding="8,12"><TextBlock Text="⑤   Export"/></Button>
+     </UniformGrid></Grid>
+     <StackPanel x:Name="EditorTitlePanel" Grid.Row="1"><TextBlock Text="{Binding StepTitle}" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="{Binding StepDescription}" Style="{StaticResource Muted}" Margin="0,7,0,0"/></StackPanel>
+     <Grid Grid.Row="2" x:Name="EditorInputs" TextBox.TextChanged="OnEditText" Slider.ValueChanged="OnSliderChanged" ComboBox.SelectionChanged="OnSelectionChanged" CheckBox.Checked="OnCheckChanged" CheckBox.Unchecked="OnCheckChanged">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="292"/></Grid.ColumnDefinitions>
+      <Border CornerRadius="10" BorderBrush="#21516D" BorderThickness="1" ClipToBounds="True">
+       <Grid>
+        <Grid Visibility="{Binding IsPhoto,Converter={StaticResource Bool}}" Background="#050D15">
+         <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <Grid x:Name="PhotoSurface" Margin="18" Focusable="True" PreviewKeyDown="OnCropKey" LostMouseCapture="OnCropCaptureLost" MouseLeftButtonDown="OnCropDown" MouseMove="OnCropMove" MouseLeftButtonUp="OnCropUp" ClipToBounds="True">
+          <Image x:Name="Photo" Source="{Binding Image}" Stretch="Uniform" Visibility="{Binding IsPhotoComparison,Converter={StaticResource Not}}"/><controls:PhotoComparison x:Name="PhotoCompare" Before="{Binding ComparisonBefore}" After="{Binding Image}" Visibility="{Binding IsPhotoComparison,Converter={StaticResource Bool}}"/><Canvas IsHitTestVisible="False"><Rectangle x:Name="CropRectangle" Stroke="#00CCFF" Fill="#2000CCFF" StrokeThickness="2" Visibility="Collapsed"/></Canvas>
+         </Grid>
+         <Border Grid.Row="1" Background="#0C1C29" Padding="15,10"><StackPanel><TextBlock Text="{Binding ImageInfo}" Style="{StaticResource Muted}" FontSize="11"/><CheckBox Content="Vorher / Nachher teilen" IsChecked="{Binding CompareEnabled}" ToolTip="Trennlinie ziehen. Beide Seiten zeigen denselben Ausschnitt und dieselbe Drehung; links ohne Tonwertkorrekturen."/><CheckBox IsChecked="{Binding ShowOriginal}"><TextBlock Text="Original anzeigen / Ausschnitt mit der Maus wählen" TextWrapping="Wrap"/></CheckBox></StackPanel></Border>
+        </Grid>
+        <Grid Visibility="{Binding IsModel,Converter={StaticResource Bool}}">
+         <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <controls:ModelViewport x:Name="Viewport" Visibility="{Binding IsSurfaceMode,Converter={StaticResource Bool}}"/>
+         <controls:PrintSetViewport IsEnabled="{Binding Busy,Converter={x:Static local:InverseBooleanConverter.Instance}}" x:Name="PrintSetView" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Bool}}"/>
+         <controls:SectionViewport x:Name="SectionView" Visibility="{Binding IsSectionMode,Converter={StaticResource Bool}}"/>
+         <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16" CornerRadius="5" Background="#D9081926" Padding="10,6"><TextBlock Text="{Binding PreviewTitle}" FontSize="10" Foreground="#65C9EF"/></Border>
+         <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,52,16,0" CornerRadius="5" Background="#C9081926" Padding="10,6" Visibility="{Binding IsSurfaceMode,Converter={StaticResource Bool}}"><TextBlock Text="{Binding MeshInfo}" FontSize="11" Foreground="#AEC4D3"/></Border>
+         <Border Grid.Row="1" Background="#EF081724" BorderBrush="#21516D" BorderThickness="0,1,0,0" Padding="10,6"><StackPanel><WrapPanel HorizontalAlignment="Center" Visibility="{Binding IsSurfaceMode,Converter={StaticResource Bool}}">
+          <Button Content="↻" ToolTip="Kamera zurücksetzen" Command="{Binding Camera}" CommandParameter="reset" Padding="12,8" Margin="2"/>
+          <Button Content="Vorn" ToolTip="Vorderansicht" Command="{Binding Camera}" CommandParameter="front" Padding="9,8" Margin="2"/>
+          <Button Content="Hinten" ToolTip="Rückansicht · Leuchtkasten und Rückwand prüfen" Command="{Binding Camera}" CommandParameter="back" Padding="9,8" Margin="2"/>
+          <Button Content="Seite" Command="{Binding Camera}" CommandParameter="side" Padding="9,8" Margin="2"/>
+          <Button Content="Oben" Command="{Binding Camera}" CommandParameter="top" Padding="9,8" Margin="2"/>
+          <Button Content="Unten" ToolTip="Unteransicht · Bodenöffnungen prüfen" Command="{Binding Camera}" CommandParameter="bottom" Padding="9,8" Margin="2"/>
+          <Button Content="☼ Licht" Command="{Binding Camera}" CommandParameter="light" Padding="9,8" Margin="2" Visibility="{Binding HasPhotoSurface,Converter={StaticResource Bool}}"/>
+          <Button Content="▦ Gitter" Command="{Binding Camera}" CommandParameter="grid" Padding="9,8" Margin="2"/>
+          <Button Content="◇ Draht" ToolTip="Ausgedünntes Drahtgitter über der Oberfläche" Command="{Binding Camera}" CommandParameter="wire" Padding="9,8" Margin="2"/>
+         </WrapPanel><WrapPanel HorizontalAlignment="Center" Visibility="{Binding IsSectionMode,Converter={StaticResource Bool}}"><Button Content="← Schicht" Command="{Binding PreviousLayer}" Padding="9,8" Margin="2"/><Button Content="Ansicht zurücksetzen" Command="{Binding ResetSectionView}" Padding="9,8" Margin="2"/><Button Content="Schicht →" Command="{Binding NextLayer}" Padding="9,8" Margin="2"/></WrapPanel></StackPanel></Border>
+        </Grid>
+       </Grid>
+      </Border>
+      <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="16">
+       <ScrollViewer x:Name="OptionsScroller" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+         <StackPanel Visibility="{Binding IsModel,Converter={StaticResource Bool}}" Margin="0,0,0,12">
+          <TextBlock Text="Ansicht" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+          <UniformGrid Columns="2"><Button Content="3D-Modell" Command="{Binding SetViewMode}" CommandParameter="surface" Margin="0,3,5,3"/><Button Content="Druckschicht" Command="{Binding SetViewMode}" CommandParameter="section" IsEnabled="{Binding CanSlicePart}" Style="{StaticResource Primary}"/></UniformGrid>
+          <Button Content="Drucksatz · alle Teile" Command="{Binding ShowPrintSet}" Visibility="{Binding HasParts,Converter={StaticResource Bool}}" Padding="8,10" FontSize="12"/>
+          <StackPanel Visibility="{Binding IsPrintSetMode,Converter={StaticResource Bool}}" Margin="0,10,0,6">
+           <TextBlock Text="Drucksatz anordnen" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8"/>
+           <TextBlock Text="Anordnung"/><ComboBox x:Name="PrintSetArrangementCombo" IsEnabled="{Binding Busy,Converter={x:Static local:InverseBooleanConverter.Instance}}" ItemsSource="{Binding PrintSetArrangements}" SelectedItem="{Binding SelectedPrintSetArrangement}" DisplayMemberPath="Name" ToolTip="Automatisch wählt die passende Anordnung mit der kleineren Hüllfläche. Zeile und Spalte werden nicht automatisch ersetzt. Manuell übernimmt vorhandene Positionen und erlaubt freie XY-Werte."/>
+           <TextBlock Text="Randabstand · mm"/><TextBox x:Name="PrintSetMarginBox" Text="{Binding PrintSetMargin,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation" ToolTip="0–50 mm Abstand der Hüllrechtecke zum Druckbettrand."/>
+           <TextBlock Text="Teileabstand · mm"/><TextBox x:Name="PrintSetGapBox" Text="{Binding PrintSetGap,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation" ToolTip="1–50 mm Abstand zwischen den Hüllrechtecken beider Teile."/>
+           <TextBlock Text="Werte gehören zum Projekt. Nach Änderungen den Drucksatz neu berechnen und das Projekt speichern. Einzelteilmaße und Drucklagen bleiben erhalten." Style="{StaticResource Muted}" FontSize="10" Margin="0,5,0,12"/>
+           <StackPanel Visibility="{Binding IsManualPrintSet,Converter={StaticResource Bool}}" IsEnabled="{Binding Busy,Converter={x:Static local:InverseBooleanConverter.Instance}}" Margin="0,0,0,12">
+            <TextBlock Text="Freie Positionen · mm" FontSize="14" FontWeight="SemiBold"/>
+            <TextBlock Text="Linke untere Ecke des Hüllrechtecks, vom Bettursprung gemessen." Style="{StaticResource Muted}" FontSize="10" Margin="0,4,0,6"/>
+            <TextBlock Text="1 · Lithophanie — X / Y"/><UniformGrid Columns="2"><TextBox x:Name="BodyPositionXBox" Margin="0,4,6,4" Text="{Binding BodyPositionX,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.##}" Validation.Error="OnAngleValidation"/><TextBox x:Name="BodyPositionYBox" Text="{Binding BodyPositionY,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.##}" Validation.Error="OnAngleValidation"/></UniformGrid>
+            <TextBlock Text="2 · Zubehör — X / Y"/><UniformGrid Columns="2"><TextBox x:Name="AccessoryPositionXBox" Margin="0,4,6,4" Text="{Binding AccessoryPositionX,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.##}" Validation.Error="OnAngleValidation"/><TextBox x:Name="AccessoryPositionYBox" Text="{Binding AccessoryPositionY,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.##}" Validation.Error="OnAngleValidation"/></UniformGrid>
+           </StackPanel>
+           <TextBlock Text="Hüllrechtecke mit der Maus verschieben. Pfeiltasten: 1 mm, Umschalt: 10 mm. Escape bricht Ziehen ab. Überlappung und Randabstand werden geprüft." Style="{StaticResource Muted}" FontSize="10" Margin="0,0,0,12"/>
+           <UniformGrid Columns="2"><Button x:Name="UndoPrintLayoutButton" Content="↶ Zurück" Command="{Binding UndoPrintLayout}" Margin="0,3,5,3" Padding="7,9" FontSize="12" ToolTip="Drucksatzschritt zurücknehmen · Strg+Alt+Z"/><Button x:Name="RedoPrintLayoutButton" Content="↷ Wiederholen" Command="{Binding RedoPrintLayout}" Padding="7,9" FontSize="12" ToolTip="Drucksatzschritt wiederholen · Strg+Alt+Y"/></UniformGrid>
+           <TextBlock Text="{Binding PrintLayoutHistoryInfo}" Style="{StaticResource Muted}" FontSize="10" Margin="0,3,0,12"/>
+           <TextBlock Text="{Binding PrintSetInfo}" TextWrapping="Wrap" FontSize="12" Foreground="#B4D5E6"/><Button Content="Drucksatz neu berechnen" Command="{Binding RebuildPrintSet}" Padding="8,9" FontSize="12"/><Button Content="Drucksatz als 3MF speichern" Visibility="{Binding IsExport,Converter={StaticResource Not}}" Command="{Binding ExportPrintSet}" Background="#12813B" BorderBrush="#50E67D" Padding="8,10" FontSize="12"/><Button Content="Bettübersicht als PNG" Command="{Binding ExportPng}" Padding="8,8" FontSize="11"/><TextBlock Text="Standard-3MF mit zwei getrennten Objekten. Keine Montage, Stützen oder Druckbahnen. Die Übersicht zeigt die Hüllrechtecke." Style="{StaticResource Muted}" FontSize="10"/></StackPanel>
+          <StackPanel Visibility="{Binding HasParts,Converter={StaticResource Bool}}" Margin="0,8,0,2"><StackPanel Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}"><TextBlock Text="Teil / Montage"/><ComboBox x:Name="PartCombo" ItemsSource="{Binding Parts}" SelectedValuePath="Part" SelectedValue="{Binding SelectedPartKind}" DisplayMemberPath="Name"/><TextBlock Text="{Binding PartHint}" Style="{StaticResource Muted}" FontSize="10" TextWrapping="Wrap"/></StackPanel></StackPanel>
+          <StackPanel Visibility="{Binding IsSectionMode,Converter={StaticResource Bool}}" Margin="0,10,0,0">
+           <TextBlock Text="{Binding SectionInfo}" Foreground="#B4D5E6" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"/>
+           <TextBlock Text="{Binding LayerLabel}" FontWeight="SemiBold"/><Slider Minimum="1" Maximum="{Binding TotalLayers}" Value="{Binding CurrentLayer,Mode=TwoWay}" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding HasSectionMesh}" ToolTip="Druckschicht wählen"/>
+           <TextBlock Text="Schichtnummer"/><TextBox x:Name="CurrentLayerBox" Text="{Binding CurrentLayer,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnSectionValidationError"/>
+           <TextBlock Text="Prüfschichthöhe · mm" Margin="0,6,0,0"/><TextBox x:Name="SliceLayerHeightBox" Text="{Binding SliceLayerHeight,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnSectionValidationError" ToolTip="0,01–1 mm. Die Prüfschichthöhe verändert nur die Schichtansicht."/><TextBlock Text="{Binding SliceLayerError}" TextWrapping="Wrap" Foreground="#FFB689" FontSize="11"/>
+           <TextBlock Text="{Binding InspectionSummary}" Style="{StaticResource Muted}" FontSize="11" Margin="0,10,0,6"/>
+           <Button Content="Mit Exportauflösung prüfen" Command="{Binding InspectFullQuality}" Style="{StaticResource Primary}" Padding="10,10" FontSize="12"/>
+           <Button Content="Vorschauraster verwenden" Command="{Binding UsePreviewQuality}" Padding="10,8" FontSize="12"/>
+           <Button Content="Schicht als PNG speichern" Command="{Binding ExportPng}" Padding="10,8" FontSize="12"/>
+           <ProgressBar IsIndeterminate="True" Height="4" Margin="0,10" Visibility="{Binding SectionWorking,Converter={StaticResource Bool}}"/><Button Content="Schichtberechnung abbrechen" Command="{Binding Cancel}" Visibility="{Binding SectionWorking,Converter={StaticResource Bool}}" Padding="8,6" FontSize="11"/>
+           <TextBlock Text="Geometrieschnitt ohne Druckbahnen. Im Vorschauraster können kleine Details fehlen; für die Detailprüfung Exportauflösung berechnen." Style="{StaticResource Muted}" FontSize="11" Margin="0,8,0,0"/>
+          </StackPanel>
+          <Expander x:Name="PlacementPanel" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Header="Druckausrichtung" Foreground="#DBEDF9" Margin="0,10,0,2">
+           <StackPanel Margin="0,8,0,0" IsEnabled="{Binding CanSlicePart}"><StackPanel IsEnabled="{Binding Busy,Converter={x:Static local:InverseBooleanConverter.Instance}}">
+            <ComboBox x:Name="PlacementCombo" ItemsSource="{Binding Placements}" SelectedItem="{Binding SelectedPlacement}" DisplayMemberPath="Name" ToolTip="Ändert die tatsächliche Lage in Vorschau, Druckschichten und STL/3MF."/>
+            <TextBlock Text="Freie Druckwinkel · Grad" Margin="0,8,0,3"/>
+            <UniformGrid Columns="3"><StackPanel Margin="0,0,3,0"><TextBlock Text="X · Neigung" FontSize="10"/><TextBox x:Name="PrintAngleXBox" Text="{Binding AngleX,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnAngleValidation" Padding="5,8" ToolTip="Druckachse X: −180° bis +180°. Rotation um die Modellmitte."/></StackPanel><StackPanel Margin="0,0,3,0"><TextBlock Text="Y · Neigung" FontSize="10"/><TextBox x:Name="PrintAngleYBox" Text="{Binding AngleY,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnAngleValidation" Padding="5,8" ToolTip="Druckachse Y: −180° bis +180°. Nach der X-Neigung."/></StackPanel><StackPanel><TextBlock Text="Z · Drehung" FontSize="10"/><TextBox x:Name="PrintAngleZBox" Text="{Binding AngleZ,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnAngleValidation" Padding="5,8" ToolTip="Druckachse Z (senkrecht): −180° bis +180°. Nach X und Y."/></StackPanel></UniformGrid>
+            <Button Content="Freie Winkel zurücksetzen" Command="{Binding ResetAngles}" Padding="6,6" FontSize="11"/>
+            <TextBlock Text="Reihenfolge: Grundlage → X → Y → Z → Bettrotation. Die Winkel gelten nur für das gewählte Einzelteil." Style="{StaticResource Muted}" FontSize="10"/>
+            <CheckBox Content="90° auf dem Druckbett drehen" IsChecked="{Binding TurnOnBed90}"/>
+            <Button Content="Passend zum Druckraum ausrichten" Command="{Binding FitToPrinter}" Style="{StaticResource Primary}" Padding="8,10" FontSize="11"/>
+            <TextBlock Text="{Binding PlacementSearchInfo}" TextWrapping="Wrap" Foreground="#9AD6ED" FontSize="11" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PrintSizeInfo}" Style="{StaticResource Muted}" FontSize="11" Margin="0,8,0,4"/>
+            <TextBlock Text="{Binding PrinterWarning}" TextWrapping="Wrap" Foreground="#91CFB6" FontSize="11"/>
+            <TextBlock Text="Die Suche behält eine passende aktuelle Lage. Sonst prüft sie rechtwinklige Lagen ohne freie Winkel in Exportauflösung. Auflage, Überhänge und nötige Stützen im Slicer kontrollieren." Style="{StaticResource Muted}" FontSize="10" Margin="0,8,0,0"/>
+           </StackPanel></StackPanel>
+          </Expander><TextBlock Text="{Binding PlacementSummary}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Foreground="#8BA5B9" FontSize="11" TextWrapping="Wrap"/>
+         </StackPanel>
+         <StackPanel Visibility="{Binding IsPhoto,Converter={StaticResource Bool}}">
+          <TextBlock Text="Bildbearbeitung" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,12"/>
+          <Button Content="▱   Foto laden" Command="{Binding LoadPhoto}" Style="{StaticResource Primary}"/>
+          <TextBlock Text="Oder ein Bild in dieses Fenster ziehen." Style="{StaticResource Muted}" FontSize="11" Margin="0,5,0,6"/>
+          <UniformGrid Columns="2"><Button Content="↻ Drehen" Command="{Binding Rotate}" Margin="0,3,5,3"/><Button Content="↔ Spiegeln" Command="{Binding Mirror}"/></UniformGrid>
+          <TextBlock Text="Feinrotation · °" Margin="0,9,0,0"/><Slider x:Name="StraightenSlider" Minimum="-45" Maximum="45" SmallChange="0.1" Value="{Binding StraightenAngle,Mode=TwoWay}" ToolTip="Bild ausrichten: −45° bis +45°. Ränder werden passend zum Ausschnitt beschnitten."/>
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions><TextBox x:Name="StraightenAngleBox" Text="{Binding StraightenAngle,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True}" Margin="0,3,5,3"/><Button Grid.Column="1" Content="Auf 0°" Command="{Binding ResetStraighten}" Padding="10,6"/></Grid>
+          <TextBlock Text="Seitenverhältnis bleibt erhalten; Randbereiche werden beschnitten." Style="{StaticResource Muted}" FontSize="10" Margin="0,2,0,4"/>
+          <Expander x:Name="CropPanel" Header="Ausschnitt &amp; Seitenverhältnis" Foreground="#DBEDF9" IsExpanded="False" Margin="0,8,0,6"><StackPanel Margin="0,8,0,0">
+           <WrapPanel><Button Content="1:1" ToolTip="Quadratisch zuschneiden" Command="{Binding Crop}" CommandParameter="square" Padding="12,6" Margin="0,3,5,3"/><Button Content="3:2" Command="{Binding Crop}" CommandParameter="3:2" Padding="12,6" Margin="0,3,5,3"/><Button Content="4:5" Command="{Binding Crop}" CommandParameter="4:5" Padding="12,6"/><Button Content="16:9" Command="{Binding Crop}" CommandParameter="16:9" Padding="12,6" Margin="0,3,5,3"/><Button Content="Modellformat" Command="{Binding Crop}" CommandParameter="model" Padding="10,6"/></WrapPanel>
+           <TextBlock Text="Eigenes Verhältnis · Breite : Höhe" Margin="0,6,0,0"/><UniformGrid Columns="2"><TextBox x:Name="CropAspectWidthBox" Text="{Binding CropAspectWidth,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnAngleValidation" AutomationProperties.Name="Seitenverhältnis Breite" Margin="0,0,5,0" ToolTip="0,1–1000; Verhältniswerte, keine Millimeter."/><TextBox x:Name="CropAspectHeightBox" Text="{Binding CropAspectHeight,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True}" Validation.Error="OnAngleValidation" AutomationProperties.Name="Seitenverhältnis Höhe" ToolTip="0,1–1000; zum Beispiel 4 : 5 für Hochformat."/></UniformGrid>
+           <Button Content="Mittig zuschneiden" Command="{Binding Crop}" CommandParameter="custom"/><CheckBox Content="Verhältnis beim Ziehen fixieren" IsChecked="{Binding CropAspectLock}"/>
+           <Button Content="Ausschnitt mit der Maus wählen" Command="{Binding Crop}" CommandParameter="free"/><TextBlock Text="Auswahl im Original aufziehen. Die feste Auswahl bleibt innerhalb des aufgezogenen Rechtecks. Escape bricht ab. Zuschneiden setzt Bilddrehung und Spiegeln zurück; Modellmaße bleiben gleich." Style="{StaticResource Muted}" FontSize="10"/>
+           <Button Content="Ausschnitt zurücksetzen" Command="{Binding Crop}" CommandParameter="reset" Padding="10,6"/>
+          </StackPanel></Expander>
+          <TextBlock Text="Helligkeit" Style="{StaticResource Section}"/><Slider Minimum="-0.5" Maximum="0.5" Value="{Binding Edits.Brightness,Mode=TwoWay}" ToolTip="{Binding Edits.Brightness}"/>
+          <TextBlock Text="Kontrast"/><Slider Minimum="0.2" Maximum="2.5" Value="{Binding Edits.Contrast,Mode=TwoWay}" ToolTip="{Binding Edits.Contrast}"/>
+          <TextBlock Text="Gamma"/><Slider Minimum="0.2" Maximum="3" Value="{Binding Edits.Gamma,Mode=TwoWay}" ToolTip="{Binding Edits.Gamma}"/>
+          <TextBlock Text="Schärfe"/><Slider Minimum="0" Maximum="2" Value="{Binding Edits.Sharpness,Mode=TwoWay}"/>
+          <TextBlock Text="Rauschen reduzieren"/><Slider Minimum="0" Maximum="1" Value="{Binding Edits.Denoise,Mode=TwoWay}"/>
+          <CheckBox Content="Schwarzweiß" IsChecked="{Binding Edits.Grayscale}"/><CheckBox Content="Farbumkehr" IsChecked="{Binding Edits.Invert}"/>
+          <TextBlock Text="Histogramm &amp; Tonwerte" Style="{StaticResource Section}"/><TextBlock Text="{Binding Histogram}" FontFamily="Consolas" FontSize="8" Foreground="#48C8FF"/>
+          <TextBlock Text="Schwarzpunkt" FontSize="11" Foreground="#8BA5B9"/><Slider Maximum="0.45" Value="{Binding Edits.BlackPoint,Mode=TwoWay}"/>
+          <TextBlock Text="Weißpunkt" FontSize="11" Foreground="#8BA5B9"/><Slider Minimum="0.55" Maximum="1" Value="{Binding Edits.WhitePoint,Mode=TwoWay}"/>
+          <Button Content="✧   Kontrast automatisch optimieren" Command="{Binding AutoContrast}" FontSize="12"/>
+          <UniformGrid Columns="2"><Button Content="↶ Zurück" Command="{Binding Undo}" Margin="0,3,5,3"/><Button Content="↷ Wiederholen" Command="{Binding Redo}" Padding="8,10"/></UniformGrid>
+          <Button Content="Original wiederherstellen" Command="{Binding ResetImage}"/>
+         </StackPanel>
+         <StackPanel Visibility="{Binding ShowModelOptions,Converter={StaticResource Bool}}" IsEnabled="{Binding Busy,Converter={x:Static local:InverseBooleanConverter.Instance}}">
+          <TextBlock Text="Form &amp; Vorlage" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+          <ComboBox ItemsSource="{Binding Shapes}" SelectedItem="{Binding SelectedShape}" DisplayMemberPath="Name" ToolTip="Lithophanieform auswählen"/>
+          <Button Content="Eigene Vorlagen verwalten →" Command="{Binding Navigate}" CommandParameter="Templates" Margin="0,6,0,8" ToolTip="Modelleinstellungen speichern und auf andere Fotos anwenden"/>
+          <TextBlock Text="{Binding SelectedShape.Description}" Style="{StaticResource Muted}" FontSize="11" Margin="0,6,0,8"/>
+          <StackPanel x:Name="LampShadePanel" Visibility="{Binding Model.IsShade,Converter={StaticResource Bool}}">
+           <TextBlock Text="Schirmmaße · mm" Style="{StaticResource Section}"/>
+           <TextBlock Text="Außen-Ø oben"/><TextBox x:Name="ShadeTopBox" Text="{Binding Model.ShadeTopDiameter,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Außendurchmesser oben"/>
+           <TextBlock Text="Außen-Ø unten"/><TextBox x:Name="ShadeBottomBox" Text="{Binding Model.ShadeBottomDiameter,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Außendurchmesser unten"/>
+           <TextBlock Text="Schirmhöhe"/><TextBox x:Name="ShadeHeightBox" Text="{Binding Model.ShadeHeight,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Schirmhöhe"/>
+           <StackPanel Visibility="{Binding Model.IsFacetedShade,Converter={StaticResource Bool}}">
+            <TextBlock Text="Seitenzahl · 3–16"/><TextBox Text="{Binding Model.ShadeSides,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Seitenzahl des Facettenschirms"/>
+            <TextBlock Text="Die Durchmesser werden über die Außenecken gemessen." Style="{StaticResource Muted}" FontSize="11"/>
+           </StackPanel>
+           <TextBlock Text="Montagering" Style="{StaticResource Section}"/>
+           <ComboBox x:Name="ShadeMountCombo" SelectedValuePath="Tag" SelectedValue="{Binding SelectedShadeMount,Mode=TwoWay}" AutomationProperties.Name="Position des Montagerings">
+            <ComboBoxItem Tag="{x:Static core:ShadeMount.Open}" Content="Beide Enden offen"/>
+            <ComboBoxItem Tag="{x:Static core:ShadeMount.Top}" Content="Ring oben"/>
+            <ComboBoxItem Tag="{x:Static core:ShadeMount.Bottom}" Content="Ring unten"/>
+           </ComboBox>
+           <StackPanel>
+            <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding SelectedShadeMount}" Value="{x:Static core:ShadeMount.Open}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+            <TextBlock Text="Freie Ringöffnung · Ø mm"/><TextBox x:Name="ShadeMountDiameterBox" Text="{Binding Model.ShadeMountDiameter,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Freie Ringöffnung"/>
+            <TextBlock Text="Ringstärke · mm"/><TextBox Text="{Binding Model.ShadeMountThickness,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Ringstärke"/>
+            <TextBlock Text="Montagemaß am LED-Schirmträger messen. Für den Druck den Ring zum Druckbett drehen und Überhänge im Slicer prüfen. Bei Deckenmontage einen tragfähigen Schirmträger verwenden." Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,8"/>
+           </StackPanel>
+          </StackPanel>
+          <Expander Header="Standfuß" Foreground="#DBEDF9" IsExpanded="True" Visibility="{Binding Model.SupportsStand,Converter={StaticResource Bool}}" Margin="0,6,0,10">
+           <StackPanel Margin="0,8,0,0"><CheckBox x:Name="StandToggle" Content="Integrierten Standfuß ergänzen" IsChecked="{Binding Model.StandEnabled}"/><StackPanel IsEnabled="{Binding IsChecked,ElementName=StandToggle}"><TextBlock Text="Standhöhe · mm"/><TextBox Text="{Binding Model.StandHeight,UpdateSourceTrigger=PropertyChanged}" ToolTip="1–40 mm; wird unter der unveränderten Bildhöhe ergänzt"/><TextBlock Text="Standtiefe · mm"/><TextBox Text="{Binding Model.StandDepth,UpdateSourceTrigger=PropertyChanged}" ToolTip="Breite Auflage vor und hinter dem Foto. Mindestens doppelte Rahmenstärke plus 2 mm."/></StackPanel><TextBlock Text="Die Bildhöhe bleibt erhalten. Der Standfuß wird direkt mit dem Fotopanel verbunden." Style="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+          </Expander>
+          <Expander Header="Lampenboden &amp; Bodenöffnung" Foreground="#DBEDF9" IsExpanded="True" Visibility="{Binding Model.SupportsLampBase,Converter={StaticResource Bool}}" Margin="0,6,0,10">
+           <StackPanel Margin="0,8,0,0"><TextBlock Text="Bodenstärke · mm (0 = offen)"/><TextBox Text="{Binding Model.LampBaseThickness,UpdateSourceTrigger=PropertyChanged}" ToolTip="0 für offenen Mantel; sonst mindestens 0,4 mm. Die äußere Lampenhöhe bleibt erhalten."/><TextBlock Text="Bodenöffnung · mm (0 = geschlossen)"/><TextBox Text="{Binding Model.LampBaseHoleDiameter,UpdateSourceTrigger=PropertyChanged}" ToolTip="Zentrale Durchgangsöffnung im Boden; wirkt nur mit aktivem Lampenboden."/><TextBlock Text="Der Boden ist Teil des Lampenkörpers. Die Öffnung führt senkrecht durch die Unterseite." Style="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+          </Expander>
+          <Expander Header="Kugelöffnung &amp; Kragen" Foreground="#DBEDF9" IsExpanded="True" Visibility="{Binding Model.SupportsSphereOpenings,Converter={StaticResource Bool}}" Margin="0,6,0,10">
+           <StackPanel Margin="0,8,0,0"><TextBlock Text="Untere Öffnung · mm (0 = geschlossen)"/><TextBox Text="{Binding Model.SphereOpeningDiameter,UpdateSourceTrigger=PropertyChanged}" ToolTip="Freier Innendurchmesser; 0 oder mindestens 5 mm. Maximal 85 % des Innendurchmessers der Kugel."/><TextBlock Text="Zusätzliche Kragenhöhe · mm"/><TextBox Text="{Binding Model.SphereCollarHeight,UpdateSourceTrigger=PropertyChanged}" ToolTip="0–30 mm. Unter der Kugelöffnung entsteht eine ebene ringförmige Standfläche."/><TextBlock Text="Obere Entlüftung · mm (0 = zu)"/><TextBox Text="{Binding Model.SphereVentDiameter,UpdateSourceTrigger=PropertyChanged}" ToolTip="0 oder mindestens 2 mm. Eine zweite Öffnung verbindet den Hohlraum mit der Oberseite."/><TextBlock Text="Der Kragen ist mit der Kugel verbunden. Öffnungsmaß und Passspiel passend zum eigenen Leuchtmittel wählen." Style="{StaticResource Muted}" FontSize="11" Margin="0,5,0,0"/></StackPanel>
+          </Expander>
+          <Expander x:Name="SocketPanel" Header="Separater Stecksockel" Foreground="#DBEDF9" IsExpanded="True" Visibility="{Binding Model.SupportsSphereOpenings,Converter={StaticResource Bool}}" Margin="0,6,0,10">
+           <StackPanel Margin="0,8,0,0"><CheckBox Content="Stecksockel ergänzen" IsChecked="{Binding SocketEnabled}"/><TextBlock Text="Benötigt eine untere Kugelöffnung. Beide Druckteile bleiben getrennt." Style="{StaticResource Muted}" FontSize="11"/>
+            <StackPanel IsEnabled="{Binding SocketEnabled}"><TextBlock Text="Fußdurchmesser · mm"/><TextBox Text="{Binding Model.SocketFootDiameter,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Sockelplattenhöhe · mm"/><TextBox Text="{Binding Model.SocketPlateHeight,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Einsteckhöhe · mm"/><TextBox Text="{Binding Model.SocketInsertionHeight,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Radiales Passspiel · mm"/><TextBox Text="{Binding Model.SocketClearance,UpdateSourceTrigger=PropertyChanged}" ToolTip="Pro Seite: 0,25 mm ergibt einen um 0,5 mm kleineren Einsteckdurchmesser als die Kugelöffnung."/><TextBlock Text="Zentrale Durchführung · mm"/><TextBox Text="{Binding Model.SocketHoleDiameter,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Passung in der Montageansicht prüfen. Das tatsächliche Druckspiel hängt von Material und Drucker ab." Style="{StaticResource Muted}" FontSize="10"/></StackPanel>
+           </StackPanel>
+          </Expander>
+          <Expander x:Name="BackPanelOptions" Header="Separate Rückwand" Foreground="#DBEDF9" IsExpanded="True" Visibility="{Binding Model.SupportsBackPanel,Converter={StaticResource Bool}}" Margin="0,6,0,10">
+           <StackPanel Margin="0,8,0,0"><CheckBox Content="Rückwand ergänzen" IsChecked="{Binding BackEnabled}"/><TextBlock Text="Maßhaltige Innenöffnung mit aufliegender, abnehmbarer Rückwand." Style="{StaticResource Muted}" FontSize="11"/>
+            <StackPanel IsEnabled="{Binding BackEnabled}"><TextBlock Text="Rückwandstärke · mm"/><TextBox Text="{Binding Model.BackThickness,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Einstecktiefe · mm"/><TextBox Text="{Binding Model.BackInsertionDepth,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Einsteckrandstärke · mm"/><TextBox Text="{Binding Model.BackRimWidth,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Passspiel pro Seite · mm"/><TextBox Text="{Binding Model.BackClearance,UpdateSourceTrigger=PropertyChanged}" ToolTip="0,25 mm ergibt eine um insgesamt 0,5 mm kleinere Einsteckbreite und -höhe als die Innenöffnung."/><TextBlock Text="Zentrale Durchführung · mm (0 = zu)"/><TextBox Text="{Binding Model.BackHoleDiameter,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Rahmenbreite und Kastentiefe unter Weitere Formoptionen. Kein Rastverschluss; die Passung am eigenen Drucker prüfen." Style="{StaticResource Muted}" FontSize="10"/></StackPanel>
+           </StackPanel>
+          </Expander>
+          <Expander x:Name="MountingPanel" Header="Befestigungsbohrungen" Foreground="#DBEDF9" IsExpanded="False" Visibility="{Binding HasBackPanel,Converter={StaticResource Bool}}" Margin="0,6,0,10">
+           <StackPanel Margin="0,8,0,0"><TextBlock Text="{Binding BackHoleCount}" FontWeight="SemiBold"/><TextBlock Text="Nur in der Rückwand. X: von der Mitte (links negativ). Y: von unten. Maße in mm." Style="{StaticResource Muted}" FontSize="10"/>
+            <Button Content="+ Bohrung hinzufügen" Command="{Binding AddBackHole}"/>
+            <ItemsControl x:Name="MountingHoleItems" ItemsSource="{Binding BackHoles,NotifyOnTargetUpdated=True}" TargetUpdated="OnMountingListUpdated" Validation.Error="OnMountingValidation">
+             <ItemsControl.ItemTemplate><DataTemplate><Border BorderBrush="#2A4B60" BorderThickness="0,0,0,1" Padding="0,5,0,8"><StackPanel>
+              <UniformGrid Columns="3"><StackPanel Margin="0,0,3,0"><TextBlock Text="X · mm"/><TextBox Text="{Binding X,UpdateSourceTrigger=PropertyChanged,NotifyOnValidationError=True}" AutomationProperties.Name="Bohrung X" Padding="5,8"/></StackPanel><StackPanel Margin="0,0,3,0"><TextBlock Text="Y · mm"/><TextBox Text="{Binding Y,UpdateSourceTrigger=PropertyChanged,NotifyOnValidationError=True}" AutomationProperties.Name="Bohrung Y" Padding="5,8"/></StackPanel><StackPanel><TextBlock Text="Ø · mm"/><TextBox Text="{Binding Diameter,UpdateSourceTrigger=PropertyChanged,NotifyOnValidationError=True}" AutomationProperties.Name="Bohrung Durchmesser" Padding="5,8"/></StackPanel></UniformGrid>
+              <TextBlock Text="Langloch · Zusatzlänge mm" Margin="0,6,0,0"/><TextBox Text="{Binding SlotExtension,UpdateSourceTrigger=PropertyChanged,NotifyOnValidationError=True}" AutomationProperties.Name="Langloch Zusatzlänge" ToolTip="0 = rund; 0–40 mm zusätzlich zum Durchmesser. X/Y ist die Mitte der gesamten Öffnung." Padding="5,8"/>
+              <CheckBox Content="Langloch waagerecht" IsChecked="{Binding Horizontal}" ToolTip="Ohne Häkchen senkrecht. Richtung in der aufrechten Rückwand; die Druckausrichtung dreht das ganze Teil." Margin="0,5,0,4"/>
+              <TextBlock Text="Senkung außen · Tiefe mm"/><TextBox Text="{Binding SinkDepth,UpdateSourceTrigger=PropertyChanged,NotifyOnValidationError=True}" AutomationProperties.Name="Senkung Tiefe" ToolTip="0 = aus; ab 0,1 mm. 90°-Senkung auf der äußeren Rückseite, ohne Einsteckrand. Mindestens 0,4 mm geraden Durchgang stehen lassen. Öffnungsbreite außen = Durchmesser + 2 × Senktiefe." Padding="5,8"/>
+              <Button Content="Bohrung entfernen" Command="{Binding DataContext.RemoveBackHole,RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Padding="6,5" FontSize="11" HorizontalAlignment="Right"/>
+             </StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl><TextBlock Text="2–20 mm freie Breite. Gesamtlänge = Durchmesser + Zusatzlänge; 0 bleibt rund. X/Y ist die Öffnungsmitte. Senkung: 90°, außen auf der Seite ohne Einsteckrand; bei flacher Standardlage unten. Die größere Öffnung benötigt mehr Platz. Die Bohrungen verriegeln den Kasten nicht." Style="{StaticResource Muted}" FontSize="10"/>
+           </StackPanel>
+          </Expander>
+          <Expander x:Name="HangingTabsPanel" Header="Aufhängelaschen" Foreground="#DBEDF9" Margin="0,8,0,8" Visibility="{Binding Model.SupportsHangingTabs,Converter={StaticResource Bool}}">
+           <StackPanel Margin="0,8,0,0">
+            <CheckBox x:Name="HangingTabsToggle" Content="Zwei Aufhängelaschen ergänzen" IsChecked="{Binding Model.HangingTabsEnabled}"/>
+            <StackPanel IsEnabled="{Binding Model.HangingTabsEnabled}">
+             <TextBlock Text="Laschenbreite · mm"/><TextBox x:Name="TabWidthBox" Text="{Binding Model.TabWidth,UpdateSourceTrigger=PropertyChanged}"/>
+             <TextBlock Text="Zusätzliche Höhe · mm"/><TextBox x:Name="TabHeightBox" Text="{Binding Model.TabHeight,UpdateSourceTrigger=PropertyChanged}"/>
+             <TextBlock Text="Lochdurchmesser · mm"/><TextBox x:Name="TabHoleBox" Text="{Binding Model.TabHoleDiameter,UpdateSourceTrigger=PropertyChanged}"/>
+             <TextBlock Text="Randabstand · mm"/><TextBox x:Name="TabInsetBox" Text="{Binding Model.TabInset,UpdateSourceTrigger=PropertyChanged}" ToolTip="Vom äußeren Bildrand bis zum äußeren Laschenrand. Beide Laschen liegen symmetrisch."/>
+            </StackPanel>
+            <TextBlock Text="Flaches Bild / Rahmen · Rahmenbreite mindestens 1,2 mm. Die Fotohöhe bleibt erhalten; Laschen stehen oben über. Reale Belastbarkeit am eigenen Druck prüfen." Style="{StaticResource Muted}" FontSize="10"/>
+           </StackPanel>
+          </Expander>
+          <StackPanel Visibility="{Binding Model.IsShade,Converter={StaticResource Not}}">
+          <TextBlock Text="Abmessungen · mm" Style="{StaticResource Section}"/>
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="112"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+           <TextBlock Text="Breite" VerticalAlignment="Center"/><TextBox Grid.Column="1" x:Name="ModelWidthBox" Text="{Binding ModelWidth,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation" ToolTip="Breite für flache und gebogene Modelle"/>
+           <TextBlock Grid.Row="1" Text="Höhe" VerticalAlignment="Center"/><TextBox Grid.Row="1" Grid.Column="1" x:Name="ModelHeightBox" Text="{Binding ModelHeight,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation"/>
+           <TextBlock Grid.Row="2" Text="Durchmesser" VerticalAlignment="Center"/><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Model.Diameter,UpdateSourceTrigger=PropertyChanged}" ToolTip="Für Kugeln, Zylinder, Plaketten und Anhänger"/>
+          </Grid>
+          <StackPanel Visibility="{Binding SupportsPhotoSizing,Converter={StaticResource Bool}}" Margin="0,5,0,8"><CheckBox Content="Breite und Höhe koppeln" IsChecked="{Binding LockDimensions}" ToolTip="Erhält das aktuelle Verhältnis der Modellmaße. Modelländerungen gehören nicht zum Bild-Undo."/><Button Content="Höhe an Motivformat anpassen" Command="{Binding FitDimensionsToImage}" ToolTip="Breite bleibt gleich. Die Höhe wird aus dem aktuellen Zuschnitt und der Bilddrehung berechnet; anschließend werden die Maße gekoppelt."/><TextBlock Text="Aktueller Bildausschnitt inklusive Drehung. Die Fotofläche wird angepasst; Rahmen und Zubehörmaße prüfen." Style="{StaticResource Muted}" FontSize="10"/></StackPanel>
+          </StackPanel>
+          <TextBlock Text="Wandstärke · mm" Style="{StaticResource Section}"/>
+          <TextBlock Text="Die Wandstärke wird in der horizontalen Schnittebene gemessen." Visibility="{Binding Model.IsShade,Converter={StaticResource Bool}}" Style="{StaticResource Muted}" FontSize="11"/>
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Minimum (hell)" Foreground="#8BA5B9" FontSize="11"/><TextBox Text="{Binding Model.MinThickness,UpdateSourceTrigger=PropertyChanged}"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Maximum (dunkel)" Foreground="#8BA5B9" FontSize="11"/><TextBox Text="{Binding Model.MaxThickness,UpdateSourceTrigger=PropertyChanged}"/></StackPanel></Grid>
+          <TextBlock Text="Detailauflösung · mm" Style="{StaticResource Section}"/><TextBox Text="{Binding Model.Resolution,UpdateSourceTrigger=PropertyChanged}" ToolTip="0,05–3 mm. Feineres Raster benötigt mehr Zeit und Speicher."/>
+          <TextBlock Text="Die Speichergrenze kann das effektive Raster vergrößern. Vorschau und Export zeigen den tatsächlichen Wert." Style="{StaticResource Muted}" FontSize="11"/>
+          <CheckBox Content="Negativmodus (hell wird dicker)" IsChecked="{Binding Model.Negative}"/>
+          <Expander Header="Weitere Formoptionen" Foreground="#DBEDF9" Margin="0,12,0,8" Visibility="{Binding Model.IsShade,Converter={StaticResource Not}}">
+           <StackPanel Margin="0,8,0,0"><TextBlock Text="Krümmungsradius · mm"/><TextBox Text="{Binding Model.Radius,UpdateSourceTrigger=PropertyChanged}" ToolTip="Für gebogenes Bild und Nachtlicht"/><TextBlock Text="Rahmenbreite · mm (0 = ohne)"/><TextBox Text="{Binding Model.FrameWidth,UpdateSourceTrigger=PropertyChanged}" ToolTip="Für rechteckige Fotoplatten"/><TextBlock Text="Leuchtkasten-Tiefe · mm"/><TextBox Text="{Binding Model.BoxDepth,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Seitenzahl der Lampe · 3–16"/><TextBox Text="{Binding Model.Sides,UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="Anhänger-Bohrung · mm"/><TextBox Text="{Binding Model.HoleDiameter,UpdateSourceTrigger=PropertyChanged}"/></StackPanel>
+          </Expander>
+          <StackPanel Visibility="{Binding HasPhotoSurface,Converter={StaticResource Bool}}"><TextBlock Text="Beleuchtung (Vorschau)" Style="{StaticResource Section}"/><Slider Value="0.8" ValueChanged="OnLightChanged" ToolTip="Lichtstärke der Vorschau"/>
+          <TextBlock Text="Lichtwirkung ist eine Annäherung. Material, Druck und Lichtquelle beeinflussen das Ergebnis." Style="{StaticResource Muted}" FontSize="11"/></StackPanel>
+          <TextBlock Text="Druckerprofil" Style="{StaticResource Section}"/><ComboBox x:Name="EditorPrinterCombo" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedPrinter}" DisplayMemberPath="Name"/><TextBlock Text="{Binding ActivePrinterName}" Style="{StaticResource Muted}" FontSize="10" TextTrimming="CharacterEllipsis" ToolTip="{Binding PrinterProfileHint}"/><TextBlock Text="{Binding PrinterWarning}" TextWrapping="Wrap" Foreground="#91CFB6" FontSize="11" Margin="0,8,0,6"/>
+         </StackPanel>
+         <StackPanel x:Name="ExportPanel" Visibility="{Binding IsExport,Converter={StaticResource Bool}}" Margin="0,18,0,0">
+          <Border Background="#0D3023" CornerRadius="7" Padding="12"><StackPanel><TextBlock Text="{Binding ExportHeading}" Foreground="#6CE99B" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Prüfung und erneutes Einlesen sind im Export enthalten." Style="{StaticResource Muted}" Margin="0,8,0,0" FontSize="11"/></StackPanel></Border>
+          <TextBlock Text="{Binding PrintSizeInfo}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Style="{StaticResource Muted}" Margin="0,10,0,4"/><TextBlock Text="{Binding PrinterWarning}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" TextWrapping="Wrap" FontSize="11" Foreground="#91CFB6"/>
+          <Button Content="⇩   Exportieren als STL" Command="{Binding ExportStl}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold" Margin="0,14,0,5"/>
+          <Button Content="⇩   Exportieren als 3MF" Command="{Binding Export3Mf}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold"/>
+          <Button Content="Alle Teile als 3MF-Drucksatz" Command="{Binding ExportPrintSet}" Visibility="{Binding HasParts,Converter={StaticResource Bool}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold" ToolTip="Zuerst Drucksatz · alle Teile berechnen; anschließend beide vorbereiteten Objekte als 3MF exportieren."/>
+          <Button Content="Vorschau als PNG speichern" Command="{Binding ExportPng}"/>
+          <Button Content="Bearbeitbares Projekt speichern" Command="{Binding Save}"/>
+         </StackPanel>
+        </StackPanel>
+       </ScrollViewer>
+      </Border>
+     </Grid>
+     <Grid Grid.Row="3" Margin="0,12,0,0"><Button Content="←   Zurück" Command="{Binding Back}" HorizontalAlignment="Left" Width="120"/><TextBlock Text="{Binding NavigationHint}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" Foreground="#688A9F" Visibility="{Binding IsModel,Converter={StaticResource Bool}}"/><Button Content="Weiter   →" Command="{Binding Next}" Style="{StaticResource Primary}" HorizontalAlignment="Right" Width="130" Visibility="{Binding IsExport,Converter={StaticResource Not}}"/></Grid>
+    </Grid>
+    <!-- Vorlagen -->
+    <ScrollViewer x:Name="TemplatesScroller" Visibility="{Binding IsTemplates,Converter={StaticResource Bool}}" VerticalScrollBarVisibility="Auto"><StackPanel>
+     <TextBlock Text="Vorlagen &amp; Formen" Style="{StaticResource Heading}"/>
+     <TextBlock Text="Lampenschirme" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,14"/>
+     <ItemsControl ItemsSource="{Binding ShadeShapes}" ItemTemplate="{StaticResource ShapeCard}" Margin="0,0,0,20"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+     <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,24"><StackPanel>
+      <TextBlock Text="Eigene Vorlagen" FontSize="19" FontWeight="SemiBold"/>
+      <TextBlock Text="Aktuelle Form, Maße, Zubehör und Drucklagen unter einem eigenen Namen speichern." Style="{StaticResource Muted}" Margin="0,6,0,12"/>
+      <ComboBox x:Name="ModelPresetCombo" ItemsSource="{Binding ModelPresets}" SelectedItem="{Binding SelectedModelPreset}" DisplayMemberPath="Name" ToolTip="Gespeicherte eigene Vorlage auswählen"/>
+      <TextBlock Text="{Binding PresetDescription}" Style="{StaticResource Muted}" Margin="0,8,0,12"/>
+      <TextBlock Text="Vorlagenname"/>
+      <TextBox x:Name="PresetNameBox" Text="{Binding PresetName,UpdateSourceTrigger=PropertyChanged}" MaxLength="80" ToolTip="Ein neuer Name speichert eine zusätzliche Vorlage. Bestehende Vorlagen werden nicht überschrieben."/>
+      <WrapPanel Margin="0,8,0,0">
+       <Button x:Name="ApplyPresetButton" Content="Vorlage anwenden" Command="{Binding ApplyModelPreset}" Style="{StaticResource Primary}" Margin="0,0,10,8"/>
+       <Button x:Name="SavePresetButton" Content="Aktuelles Modell speichern" Command="{Binding SaveModelPreset}" Margin="0,0,10,8"/>
+       <Button Content="Umbenennen" Command="{Binding RenameModelPreset}" Margin="0,0,10,8"/>
+       <Button Content="Löschen …" Command="{Binding DeleteModelPreset}" Margin="0,0,0,8"/>
+      </WrapPanel>
+      <TextBlock Text="{Binding PresetMessage}" Foreground="#83D6F5" TextWrapping="Wrap" Margin="0,4,0,0"/>
+      <TextBlock Text="Lokal auf diesem Computer · Foto, Bildkorrekturen, Druckerprofil und aktuelles Speicherbudget bleiben beim Anwenden erhalten." Style="{StaticResource Muted}" FontSize="11" Margin="0,9,0,0"/>
+     </StackPanel></Border>
+     <TextBlock Text="Grundformen" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,14"/>
+     <ItemsControl ItemsSource="{Binding OtherShapes}" ItemTemplate="{StaticResource ShapeCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+     <Border Style="{StaticResource Panel}"><TextBlock Text="Rundformen werden radial berechnet. Kugeln können geschlossen oder mit unterer Lampenöffnung und oberer Entlüftung erzeugt werden. Leuchtkästen sind hinten offen. Für Hohlkörper und Überhänge die Druckausrichtung und Stützen im Slicer prüfen." Style="{StaticResource Muted}"/></Border>
+    </StackPanel></ScrollViewer>
+    <!-- Projekte -->
+    <ScrollViewer Visibility="{Binding IsProjects,Converter={StaticResource Bool}}" VerticalScrollBarVisibility="Auto"><StackPanel><TextBlock Text="Meine Projekte" Style="{StaticResource Heading}"/><TextBlock Text="Lokal gespeichert. Jederzeit weitergestalten." Style="{StaticResource Muted}"/><WrapPanel Margin="0,18,0,24"><Button Content="＋ Neues Projekt" Command="{Binding New}" Style="{StaticResource Primary}" Margin="0,0,12,0"/><Button Content="▱ Projekt öffnen …" Command="{Binding OpenProject}"/></WrapPanel><ItemsControl ItemsSource="{Binding Recent}" ItemTemplate="{StaticResource RecentCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl><TextBlock Text="Projekte werden als .lithopro-Datei mit Originalbild, Bildkorrekturen, Form, Maßen und Druckerprofil gespeichert. Du bestimmst den Speicherort." Style="{StaticResource Muted}" Margin="0,12"/></StackPanel></ScrollViewer>
+    <!-- Einstellungen -->
+    <ScrollViewer x:Name="SettingsScroller" Visibility="{Binding IsSettings,Converter={StaticResource Bool}}" VerticalScrollBarVisibility="Auto"><StackPanel MaxWidth="780" HorizontalAlignment="Left" TextBox.TextChanged="OnEditText"><TextBlock Text="Einstellungen" Style="{StaticResource Heading}"/><TextBlock Text="Für deinen Computer und deinen 3D-Drucker." Style="{StaticResource Muted}" Margin="0,0,0,22"/>
+     <Border Style="{StaticResource Panel}" Margin="0,0,0,18"><StackPanel><TextBlock Text="Leistung &amp; Speicher" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Speicherbudget für Geometrie · MB (64–2048)" Margin="0,16,0,3"/><TextBox Text="{Binding Model.MemoryMb,UpdateSourceTrigger=PropertyChanged}" Width="160" HorizontalAlignment="Left"/><TextBlock Text="Empfehlung für Intel N95: 256 MB. Die Vorschau verwendet ein gröberes Raster. Die Gesamtanwendung benötigt zusätzlich Speicher für Bilder, Rendering und Exportprüfung." Style="{StaticResource Muted}" Margin="0,8,0,0"/></StackPanel></Border>
+     <Border Style="{StaticResource Panel}"><StackPanel><TextBlock Text="Eigene Druckerprofile" FontSize="18" FontWeight="SemiBold"/><ComboBox x:Name="PrinterLibraryCombo" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedPrinter}" DisplayMemberPath="Name" Margin="0,16,0,12"/><TextBlock Text="{Binding PrinterProfileHint}" Style="{StaticResource Muted}" Margin="0,0,0,12"/><TextBlock Text="Profilname für Speichern oder Umbenennen"/><TextBox x:Name="PrinterNameBox" Text="{Binding Printer.Name,UpdateSourceTrigger=PropertyChanged}" MaxLength="256"/><TextBlock Text="Druckverfahren (FDM / Resin)"/><TextBox Text="{Binding Printer.Process,UpdateSourceTrigger=PropertyChanged}"/>
+      <UniformGrid Columns="3"><StackPanel Margin="0,0,10,0"><TextBlock Text="Druckbett X · mm"/><TextBox x:Name="PrinterBedXBox" Text="{Binding Printer.BedX,UpdateSourceTrigger=PropertyChanged}"/></StackPanel><StackPanel Margin="0,0,10,0"><TextBlock Text="Druckbett Y · mm"/><TextBox Text="{Binding Printer.BedY,UpdateSourceTrigger=PropertyChanged}"/></StackPanel><StackPanel><TextBlock Text="Bauhöhe Z · mm"/><TextBox Text="{Binding Printer.BuildZ,UpdateSourceTrigger=PropertyChanged}"/></StackPanel></UniformGrid>
+      <UniformGrid Columns="2"><StackPanel Margin="0,0,10,0"><TextBlock Text="Düse · mm (FDM)"/><TextBox Text="{Binding Printer.Nozzle,UpdateSourceTrigger=PropertyChanged}"/></StackPanel><StackPanel><TextBlock Text="Schichthöhe · mm"/><TextBox Text="{Binding Printer.Layer,UpdateSourceTrigger=PropertyChanged}"/></StackPanel></UniformGrid><TextBlock Text="Material"/><TextBox Text="{Binding Printer.Material,UpdateSourceTrigger=PropertyChanged}"/>
+      <WrapPanel Margin="0,16,0,0">
+       <Button Content="P1S / PETG hinzufügen" Command="{Binding AddP1SProfile}" Margin="0,0,10,8" ToolTip="256 × 256 × 256 mm; Düse und Schicht prüfen. Bestehende Profile bleiben erhalten."/>
+       <Button x:Name="SavePrinterButton" Content="Profil speichern" Command="{Binding SaveProfile}" Style="{StaticResource Primary}" Margin="0,0,10,8" ToolTip="Neuer Name erstellt ein Profil; gleicher Name aktualisiert die gespeicherten Werte."/>
+       <Button x:Name="ApplyPrinterButton" Content="Gespeicherte Werte übernehmen" Command="{Binding ApplyPrinterProfile}" Margin="0,0,10,8"/>
+       <Button x:Name="RenamePrinterButton" Content="Umbenennen" Command="{Binding RenamePrinterProfile}" Margin="0,0,10,8" ToolTip="Ändert nur den gespeicherten Namen des ausgewählten Profils. Andere bearbeitete Werte werden mit Profil speichern übernommen."/>
+       <Button Content="Löschen …" Command="{Binding DeletePrinterProfile}" Margin="0,0,10,8"/>
+       <Button Content="Profildatei neu laden" Command="{Binding ReloadPrinterProfiles}" Margin="0,0,0,8"/>
+      </WrapPanel>
+      <TextBlock Text="{Binding PrinterProfileMessage}" Foreground="#83D6F5" TextWrapping="Wrap" Margin="0,6,0,0"/>
+      <TextBlock Text="Bis zu 100 lokale Profile. Projekte behalten eigene Druckereinstellungen, auch wenn ein gespeichertes Profil gelöscht wird. Änderungen am Projekt separat speichern." Style="{StaticResource Muted}" FontSize="11" Margin="0,10,0,0"/>
+     </StackPanel></Border>
+     <Border Style="{StaticResource Panel}" Margin="0,18,0,0"><StackPanel><TextBlock Text="Offline &amp; Datenschutz" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Kein Konto. Keine Cloud. Keine Telemetrie. Bilder und Projekte bleiben lokal. Die integrierten Funktionen führen keine automatischen Updateprüfungen durch. Fremde Formmodule können eigenen Code ausführen; nur vertraute Module laden." Style="{StaticResource Muted}" Margin="0,12,0,0"/></StackPanel></Border>
+    </StackPanel></ScrollViewer>
+    <!-- Hilfe -->
+    <ScrollViewer Visibility="{Binding IsHelp,Converter={StaticResource Bool}}" VerticalScrollBarVisibility="Auto"><StackPanel MaxWidth="820" HorizontalAlignment="Left"><TextBlock Text="Hilfe &amp; Informationen" Style="{StaticResource Heading}"/><TextBlock Text="{x:Static local:AppInfo.ProductLabel}" Foreground="#1CBFFF" Margin="0,2,0,20"/>
+     <Border Style="{StaticResource Panel}"><StackPanel><TextBlock Text="Von deinem Foto zum fertigen Modell" FontSize="19" FontWeight="SemiBold"/><TextBlock Text="1. Foto laden oder eine Bilddatei ins Fenster ziehen. Das Leuchtturmbild ist ein eingebautes Beispielmotiv.&#10;&#10;2. Helligkeit und Kontrast anpassen. Für einen freien Bildausschnitt „Original anzeigen“ aktivieren und ein Rechteck über dem Bild ziehen. Die Bearbeitung erhält das Original.&#10;&#10;3. Eine Form wählen und Maße festlegen. Helle Bildstellen werden dünner; dunkle Stellen dicker. Ein guter Ausgangspunkt für weißes PLA sind 0,8 bis 3,0 mm.&#10;&#10;4. Die Vorschau mit der Maus drehen. Mausrad zum Zoomen, rechte Maustaste zum Verschieben. Licht, Gitter und Ansichten über die Werkzeugleiste umschalten.&#10;&#10;5. Im Exportschritt STL oder 3MF speichern. Ein feines Raster wird bei Bedarf an das Speicherbudget angepasst. Die exportierte Datei wird vor Abschluss erneut geprüft. Im Slicer Druckausrichtung, Stützen und Material testen." Style="{StaticResource Muted}" Margin="0,16,0,0"/></StackPanel></Border>
+     <Border Style="{StaticResource Panel}" Margin="0,18,0,0"><StackPanel><TextBlock Text="Tastenkürzel &amp; Projekte" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Strg+N: Neu · Strg+O: Projekt öffnen · Strg+S: Speichern&#10;Strg+Umschalt+S: Speichern unter · Strg+Z / Strg+Y: Bildkorrektur zurück / wiederholen&#10;&#10;Ungespeicherte Projekte werden alle 40 Sekunden lokal für die Wiederherstellung gesichert. Beim nächsten Start wird eine Wiederherstellung angeboten. Die normale Projektdatei enthält das Originalbild und alle Einstellungen." Style="{StaticResource Muted}" Margin="0,12,0,0"/></StackPanel></Border>
+     <Border Style="{StaticResource Panel}" Margin="0,18,0,0"><StackPanel><TextBlock Text="Hinweise zum Drucken" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="Die Lichtvorschau ist eine gestalterische Annäherung. Das tatsächliche Ergebnis hängt von Filament oder Resin, Wandstärke, Lichtquelle und Druckparametern ab. Kugeln können mit unterer Lampenöffnung und optionaler oberer Entlüftung erzeugt werden. Für Resin müssen Druckausrichtung, Öffnungen und tatsächlicher Ablaufweg im Slicer geprüft werden. Zylinder und mehrseitige Lampen unterstützen einen Boden mit zentraler Öffnung. Flache und gebogene Fotoplatten können einen integrierten Standfuß erhalten. Der Anhänger hat eine zentrale Bohrung.&#10;&#10;¹ WebP funktioniert, wenn Windows einen passenden WIC-Bilddecoder bereitstellt. JPG, PNG, BMP und TIFF benötigen keine zusätzlichen Bibliotheken. Es wird kein G-Code erzeugt." Style="{StaticResource Muted}" Margin="0,12,0,0"/></StackPanel></Border>
+    </StackPanel></ScrollViewer>
+   </Grid>
+  </Grid>
+  <Border Grid.Row="2" Background="#091824" BorderBrush="#1D394D" BorderThickness="0,1,0,0"><Grid Margin="16,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/><ColumnDefinition Width="90"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Status}" VerticalAlignment="Center" FontSize="11" Foreground="#8DAFC4" TextTrimming="CharacterEllipsis" ToolTip="{Binding Status}"/><ProgressBar Grid.Column="1" Value="{Binding Progress}" Maximum="100" Height="5" Margin="12,0" VerticalAlignment="Center" Visibility="{Binding Busy,Converter={StaticResource Bool}}"/><Button Grid.Column="2" Content="Abbrechen" Command="{Binding Cancel}" Padding="5,2" FontSize="10" Visibility="{Binding Busy,Converter={StaticResource Bool}}"/></Grid></Border>
+ </Grid>
+</Window>
