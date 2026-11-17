@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using LithoCreate.App.Services;
@@ -12,12 +13,82 @@ public partial class MeshToolsWindow:Window
 {
     readonly ModelSettings settings;readonly GrayImage photo;readonly byte[] source;readonly ImageEdits edits;
     ImportedModel? model;CancellationTokenSource? calculation;bool busy;
-    public MeshToolsWindow(StudioViewModel vm)
+    public MeshToolsWindow(StudioViewModel vm, bool showInserts = false)
     {
         InitializeComponent();settings=vm.Model.Clone();settings.Part=ModelPart.Lithophane;settings.MemoryMb=Math.Min(settings.MemoryMb,128);source=ImageProcessor.Png(vm.Original);edits=vm.Edits.Clone();photo=ImageProcessor.Process(vm.Original,edits).Gray;
         MountChoice.ItemsSource=WorkshopParts.Presets;MountChoice.SelectedIndex=0;
+        WindowWorkArea.KeepVisible(this);
+        InsertShapeLabel.Text = Templates.All.First(template => template.Shape == settings.Shape).Name;
+        InsertChoice.ItemsSource = LightInserts.Presets;
+        InsertChoice.SelectedIndex = 1;
+        if (showInserts)
+        {
+            Title = "Lichteinsatz · LithoCreate Pro";
+            ToolHeading.Text = "Lichteinsatz mit Kabelausgang";
+            ToolDescription.Text = "Fassungsplatte oder LED-Bandträger für die gewählte Form berechnen und separat speichern.";
+            LightInsertPanel.IsExpanded = true;
+            Loaded += (_, _) => InsertChoice.BringIntoView();
+        }
         Closing+=(_,e)=>{if(busy){calculation?.Cancel();e.Cancel=true;Status.Text="Abbruch angefordert. Anschließend das Fenster schließen.";}};
     }
+    private static readonly CultureInfo German = CultureInfo.GetCultureInfo("de-DE");
+
+    private void InsertChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (InsertChoice.SelectedItem is not LightInsertPreset preset || InsertCable is null) return;
+        var (options, placement) = LightInserts.Suggest(settings, preset);
+        InsertPlacement.Text = placement;
+        InsertRound.IsChecked = options.Outline == LightInsertOutline.Round;
+        InsertWidth.Text = options.Width.ToString("0.##", German);
+        InsertLength.Text = options.Length.ToString("0.##", German);
+        InsertOpening.Text = options.Opening.ToString("0.##", German);
+        InsertThickness.Text = options.Thickness.ToString("0.##", German);
+        InsertCable.Text = options.CableWidth.ToString("0.##", German);
+        UpdateInsertFields(preset);
+    }
+
+    private void InsertOutlineChanged(object sender, RoutedEventArgs e)
+    {
+        if (InsertChoice?.SelectedItem is not LightInsertPreset preset || InsertCable is null) return;
+        UpdateInsertFields(preset);
+        InvalidatePart();
+    }
+
+    private void UpdateInsertFields(LightInsertPreset preset)
+    {
+        bool socket = preset.Kind == LightInsertKind.Socket;
+        bool round = socket && InsertRound.IsChecked == true;
+        SocketInsertFields.Visibility = socket ? Visibility.Visible : Visibility.Collapsed;
+        InsertLengthFields.Visibility = round ? Visibility.Collapsed : Visibility.Visible;
+        InsertWidthLabel.Text = round ? "Außen-Ø · mm" : "Breite · mm";
+        InsertOpeningLabel.Text = socket ? "Freie Fassungsöffnung · Ø mm" : "Freie Bandaufnahme · mm";
+    }
+
+    private async void BuildInsert(object sender, RoutedEventArgs e)
+    {
+        if (busy || InsertChoice.SelectedItem is not LightInsertPreset preset) return;
+        try
+        {
+            bool socket = preset.Kind == LightInsertKind.Socket;
+            bool round = socket && InsertRound.IsChecked == true;
+            double opening = ReadNumber(InsertOpening.Text), thickness = ReadNumber(InsertThickness.Text);
+            double width = socket ? ReadNumber(InsertWidth.Text) : opening + 2 * thickness;
+            var options = new LightInsertOptions(preset.Kind, round ? LightInsertOutline.Round : LightInsertOutline.Rectangle,
+                width, round ? width : ReadNumber(InsertLength.Text), opening, thickness, ReadNumber(InsertCable.Text));
+            await Run(async token =>
+            {
+                var mesh = await Task.Run(() => LightInserts.Generate(options, token), token);
+                SetModel(new(mesh, mesh.Validate(token), false, "Separater Einsatz mit seitlichem Kabelausgang"), preset.Name);
+                if (ExportButton.IsEnabled) ExportButton.BringIntoView();
+            });
+        }
+        catch (FormatException)
+        {
+            Status.Text = "Gültige Maße mit Dezimalkomma eingeben.";
+        }
+    }
+
+    private static double ReadNumber(string value) => double.Parse(value, NumberStyles.Float, German);
     public async Task ImportFile(string path)=>await Run(async token=>{var read=await Task.Run(()=>StlImport.Read(path,300000,token),token);SetModel(read,Path.GetFileName(path));});
     void MountChanged(object sender,System.Windows.Controls.SelectionChangedEventArgs e)
     {
@@ -27,8 +98,9 @@ public partial class MeshToolsWindow:Window
     {
         var holes=new List<MountingHole>();var culture=System.Globalization.CultureInfo.GetCultureInfo("de-DE");foreach(string line in PlateHoles.Text.Split('\n',StringSplitOptions.RemoveEmptyEntries)){var f=line.Split((char[]?)null,StringSplitOptions.RemoveEmptyEntries);if(f.Length!=3||!double.TryParse(f[0],System.Globalization.NumberStyles.Float,culture,out double x)||!double.TryParse(f[1],System.Globalization.NumberStyles.Float,culture,out double y)||!double.TryParse(f[2],System.Globalization.NumberStyles.Float,culture,out double d))throw new System.IO.InvalidDataException("Bohrungen: X Y Durchmesser je Zeile eingeben.");holes.Add(new(){X=x,Y=y,Diameter=d});}return holes;
     }
-    void ParametersChanged(object sender,System.Windows.Controls.TextChangedEventArgs e){if(!IsLoaded||busy)return;model=null;Preview.Clear();ExportButton.IsEnabled=BambuButton.IsEnabled=false;Info.Text="Halterungsmaße geändert. Neu berechnen.";}
-    void EnableInputs(bool value){MountChoice.IsEnabled=MeasureA.IsEnabled=MeasureB.IsEnabled=MeasureT.IsEnabled=PlateHoles.IsEnabled=value;}
+    void ParametersChanged(object sender,System.Windows.Controls.TextChangedEventArgs e)=>InvalidatePart();
+    void InvalidatePart(){if(!IsLoaded||busy)return;model=null;Preview.Clear();ExportButton.IsEnabled=BambuButton.IsEnabled=false;Info.Text="Maße oder Bauart geändert. Neu berechnen.";}
+    void EnableInputs(bool value){MountChoice.IsEnabled=MeasureA.IsEnabled=MeasureB.IsEnabled=MeasureT.IsEnabled=PlateHoles.IsEnabled=LightInsertPanel.IsEnabled=value;}
     async void BuildMount(object sender,RoutedEventArgs e)
     {
         if(busy||MountChoice.SelectedItem is not WorkshopPreset p)return;
@@ -76,7 +148,7 @@ public partial class MeshToolsWindow:Window
     {
         var dialog=new SaveFileDialog{Filter="PETG-Probedruckpaket|*.zip",FileName="P1S-PETG-Probedrucke"};if(dialog.ShowDialog(this)!=true)return;
         // This operation does not replace the loaded inspection model.
-        if(busy)return;busy=true;MountButton.IsEnabled=KitButton.IsEnabled=ImportButton.IsEnabled=PluginButton.IsEnabled=PhotoButton.IsEnabled=ExportButton.IsEnabled=BambuButton.IsEnabled=false;calculation=new();CancelButton.IsEnabled=true;
+        if(busy)return;busy=true;EnableInputs(false);MountButton.IsEnabled=KitButton.IsEnabled=ImportButton.IsEnabled=PluginButton.IsEnabled=PhotoButton.IsEnabled=ExportButton.IsEnabled=BambuButton.IsEnabled=false;calculation=new();CancelButton.IsEnabled=true;
         try{await Task.Run(()=>CalibrationKit.Export(dialog.FileName,calculation.Token));Status.Text="Geprüfte Probedrucke und Messprotokoll gespeichert: "+dialog.FileName;}catch(Exception ex){Status.Text=ex.Message;}
         finally{busy=false;EnableInputs(true);calculation.Dispose();calculation=null;MountButton.IsEnabled=KitButton.IsEnabled=ImportButton.IsEnabled=PluginButton.IsEnabled=PhotoButton.IsEnabled=true;ExportButton.IsEnabled=BambuButton.IsEnabled=model?.Report.IsValid==true;CancelButton.IsEnabled=false;}
     }

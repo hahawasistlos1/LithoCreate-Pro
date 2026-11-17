@@ -91,6 +91,24 @@ partial class Program
             var combo=(ComboBox)tools.FindName("MountChoice");var button=(Button)tools.FindName("MountButton");
             foreach(int selection in new[]{0,2,3,4,5,6}){combo.SelectedIndex=selection;button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));PumpUntil(()=>((Button)tools.FindName("ExportButton")).IsEnabled);Capture(tools,$"DPI-{scale*100:0}-Halter-{selection}",scale);}
             tools.Close();
+
+            var insertTools = new MeshToolsWindow(vm, showInserts: true) { Owner = window, Width = 1920 / scale, Height = 1080 / scale };
+            insertTools.Show();
+            var insertPanel = (Expander)insertTools.FindName("LightInsertPanel");
+            var insertChoice = (ComboBox)insertTools.FindName("InsertChoice");
+            var buildInsert = (Button)insertTools.FindName("BuildInsertButton");
+            var exportInsert = (Button)insertTools.FindName("ExportButton");
+            Require(insertPanel.IsExpanded && insertChoice.IsVisible, "Lichteinsätze sind nicht direkt erreichbar.");
+            foreach (int selection in new[] { 0, 4 })
+            {
+                insertChoice.SelectedIndex = selection;
+                Require(!exportInsert.IsEnabled, "Veralteter Lichteinsatz kann nach einem Wechsel exportiert werden.");
+                buildInsert.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                PumpUntil(() => exportInsert.IsEnabled);
+                buildInsert.BringIntoView();
+                Capture(insertTools, $"DPI-{scale*100:0}-Lichteinsatz-{selection}", scale);
+            }
+            insertTools.Close();
         }
         File.WriteAllText(Path.Combine(directory,"results.json"),JsonSerializer.Serialize(new{Result="PASS",Kind="WPF-Raster-/Layoutsimulation; keine Änderung der OS-DPI",PhysicalCanvas=new[]{1920,1080},Views=results},ProjectStore.Json));vm.Dirty=false;window.Close();Console.WriteLine($"PASS: {Directory.GetFiles(directory,"*.png").Length} Renderprüfungen für 125/150/200 % auf simuliertem 1920×1080-Arbeitsfeld.");return 0;
         void Capture(Window target,string name,double scale){target.UpdateLayout();System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.ContextIdle);target.UpdateLayout();var bitmap=new RenderTargetBitmap((int)Math.Ceiling(target.ActualWidth*scale),(int)Math.Ceiling(target.ActualHeight*scale),96*scale,96*scale,PixelFormats.Pbgra32);bitmap.Render(target);File.WriteAllBytes(Path.Combine(directory,name+".png"),ImageProcessor.Png(bitmap));}

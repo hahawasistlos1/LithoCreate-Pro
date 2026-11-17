@@ -74,7 +74,15 @@ public partial class MainWindow : Window
         vm.RefreshNumericValidation(HasInvalidInput(this));
         vm.Changed();
     }
-    void OpenMeshTools(object sender,RoutedEventArgs e){if(vm==null)return;if(vm.Busy||vm.InputError){vm.Status="Zuerst die laufende Berechnung beenden oder die ungültige Eingabe korrigieren.";return;}try{new MeshToolsWindow(vm){Owner=this}.Show();}catch(Exception ex){vm.Status=ex.Message;}}
+    void OpenMeshTools(object sender,RoutedEventArgs e) => ShowMeshTools(false);
+    void OpenLightInserts(object sender,RoutedEventArgs e) => ShowMeshTools(true);
+    void ShowMeshTools(bool showInserts)
+    {
+        if(vm==null)return;
+        if(vm.Busy||vm.InputError){vm.Status="Zuerst die laufende Berechnung beenden oder die ungültige Eingabe korrigieren.";return;}
+        try{new MeshToolsWindow(vm,showInserts){Owner=this}.Show();}
+        catch(Exception ex){vm.Status=ex.Message;}
+    }
     void OnEditText(object sender,TextChangedEventArgs e)
     {
         if(!IsLoaded||vm==null||vm.RefreshingBindings||e.OriginalSource is not TextBox box||!box.IsKeyboardFocusWithin)return;

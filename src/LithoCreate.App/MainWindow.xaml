@@ -196,6 +196,7 @@
           <ComboBox ItemsSource="{Binding Shapes}" SelectedItem="{Binding SelectedShape}" DisplayMemberPath="Name" ToolTip="Lithophanieform auswählen"/>
           <Button Content="Eigene Vorlagen verwalten →" Command="{Binding Navigate}" CommandParameter="Templates" Margin="0,6,0,8" ToolTip="Modelleinstellungen speichern und auf andere Fotos anwenden"/>
           <TextBlock Text="{Binding SelectedShape.Description}" Style="{StaticResource Muted}" FontSize="11" Margin="0,6,0,8"/>
+          <Button Content="Lichteinsatz mit Kabelausgang …" Click="OpenLightInserts" Margin="0,0,0,8"/>
           <StackPanel x:Name="LampShadePanel" Visibility="{Binding Model.IsShade,Converter={StaticResource Bool}}">
            <TextBlock Text="Schirmmaße · mm" Style="{StaticResource Section}"/>
            <TextBlock Text="Außen-Ø oben"/><TextBox x:Name="ShadeTopBox" Text="{Binding Model.ShadeTopDiameter,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Außendurchmesser oben"/>

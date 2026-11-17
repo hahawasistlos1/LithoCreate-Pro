@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF>
-    <AssemblyName>LithoCreate Pro</AssemblyName><Version>1.21.2</Version><ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>LithoCreate Pro</AssemblyName><Version>1.21.3</Version><ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/LithoCreate.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../LithoCreate.Core/LithoCreate.Core.csproj" /></ItemGroup>

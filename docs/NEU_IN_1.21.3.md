@@ -1,0 +1,4 @@
+- Lichteinsätze mit Kabelausgang und formabhängigen Startmaßen für alle 19 Formen ergänzt.
+- Runde und rechteckige Halter für fertige E14- und E27-LED-Fassungen mit einstellbarer Bohrung und seitlichem Kabelausgang hinzugefügt.
+- LED-Bandträger für 8 mm, 10 mm und eigene Bandbreiten mit Führungskanten und offenem Kabelausgang am Ende ergänzt.
+- Separaten Export der Einsätze als STL oder 3MF und Übergabe an Bambu Studio hinzugefügt.

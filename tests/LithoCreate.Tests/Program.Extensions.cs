@@ -10,6 +10,7 @@ partial class Program
 {
     static void TestExtensions()
     {
+        TestLightInserts();
         Test("STL-Import: binär, ASCII, Solid-Header, Maße und sichere Gesamtwicklung",()=>
         {
             string file=Path.Combine(output,"Import-Box.stl");var source=MeshGenerator.Generate(new(1,1,[255]),new(){Width=40,Height=30,FrameWidth=0,MinThickness=3,MaxThickness=3,Resolution=2,PrintOrientation=PrintOrientation.FaceUp},false);ModelExporter.Export(file,source);var binary=StlImport.Read(file);Require(binary.Report.IsValid&&Vector3.Distance(binary.Report.Size,new(40,3,30))<.001&&!binary.OrientationCorrected,"Binärer Import verändert Achsen oder Maße.");

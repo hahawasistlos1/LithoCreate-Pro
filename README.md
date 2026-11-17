@@ -5,9 +5,9 @@ Eigenständig nutzbares, deutsches Windows-Lithophaniestudio in C# / .NET 10 / W
 ## Starten
 
 - [Windows-Downloads auf GitHub](https://github.com/hahawasistlos1/LithoCreate-Pro/releases/latest)
-- **Setup per Doppelklick:** `artifacts/LithoCreate-Pro-1.21.2-Setup.exe`
-- **Installer als MSI:** `artifacts/LithoCreate-Pro-1.21.2-win-x64.msi`
-- **Portable Anwendung:** `artifacts/portable-1.21.2/LithoCreate Pro.exe` (den gesamten Ordner zusammen behalten).
+- **Setup per Doppelklick:** `artifacts/LithoCreate-Pro-1.21.3-Setup.exe`
+- **Installer als MSI:** `artifacts/LithoCreate-Pro-1.21.3-win-x64.msi`
+- **Portable Anwendung:** `artifacts/portable-1.21.3/LithoCreate Pro.exe` (den gesamten Ordner zusammen behalten).
 - **Visual Studio:** `LithoCreatePro.sln` mit Visual Studio 2026 und .NET-Desktopentwicklung öffnen.
 
 Die veröffentlichte Anwendung enthält .NET 10 für Windows x64. Auf dem Zielrechner sind weder SDK noch separat installierte .NET-Laufzeit erforderlich. Mindestziel: Windows 10/11 x64. Das Paket ist nicht digital signiert.
@@ -16,6 +16,7 @@ Version **1.20.0** ergänzt STL-Prüfung, separat ausgeführte Formmodule, LED-/
 
 ## Dokumentation
 
+- [Neu in 1.21.3](docs/NEU_IN_1.21.3.md)
 - [Neu in 1.21.2](docs/NEU_IN_1.21.2.md)
 - [Neu in 1.21.1](docs/NEU_IN_1.21.1.md)
 - [Neu in 1.21.0](docs/NEU_IN_1.21.0.md)
