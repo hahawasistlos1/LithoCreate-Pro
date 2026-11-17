@@ -22,10 +22,15 @@ public static class ModelComputation
         settings.Validate();edits.Validate();token.ThrowIfCancellationRequested();
         if(settings.EffectivePart==ModelPart.Assembly)throw new InvalidDataException("Für die Druckprüfung ein einzelnes Teil wählen: Körper oder Zubehör.");
         if(settings.EffectivePart is ModelPart.Socket or ModelPart.BackPanel){var socket=MeshGenerator.Generate(new(1,1,[255]),settings,false,token,progress);var socketReport=socket.Validate(token);if(!socketReport.IsValid)throw new InvalidDataException("Die Zubehörgeometrie hat die Prüfung nicht bestanden.");return(socket,socketReport);}
-        int imageLimit=Math.Clamp((int)Math.Sqrt(settings.MemoryMb*1024.0*1024/32),1000,4096);
-        var original=ImageProcessor.Decode(bytes,imageLimit,edits.AutoOrient);var picture=ImageProcessor.Process(original,edits,token);
+        var picture=ProcessForExport(bytes,settings,edits,token);
         var mesh=MeshGenerator.Generate(picture.Gray,settings,false,token,progress);var report=mesh.Validate(token);
         if(!report.IsValid)throw new InvalidDataException($"Geometrieprüfung fehlgeschlagen: {report.OpenOrNonManifoldEdges} Kanten, {report.InconsistentEdges} Orientierungen, {report.DegenerateFaces} Flächen.");
         return(mesh,report);
+    }
+
+    internal static ProcessedImage ProcessForExport(byte[] bytes, ModelSettings settings, ImageEdits edits, CancellationToken token)
+    {
+        int limit = Math.Clamp((int)Math.Sqrt(settings.MemoryMb * 1024d * 1024 / 32), 1000, 4096);
+        return ImageProcessor.Process(ImageProcessor.Decode(bytes, limit, edits.AutoOrient), edits, token);
     }
 }

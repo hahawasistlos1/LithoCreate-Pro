@@ -236,3 +236,10 @@ Unter „Licht & Halterungen“ die Variante wählen, Maße eingeben und berechn
 Unter Einstellungen „P1S / PETG hinzufügen“ legt das nominale Geräteprofil an. Ein schon vorhandener gleichnamiger Eintrag wird übernommen und nicht durch die Vorgabewerte überschrieben. Die Schicht-/Düsenwerte sind Ausgangswerte, keine geprüften Einstellungen des konkreten Nutzerdruckers.
 
 Das ZIP Probedrucke/P1S-PETG-Probedrucke.zip enthält acht Lichtplatten und vier Kasten-/Deckel-Paare mit verschiedenen Spielen. Alle Teile sind geometrisch geprüft. Ergebnisse im CSV eintragen; erst reale Ausdrucke erlauben Aussagen über PETG-Passung und Lichtwirkung. Für aufrecht gedruckte Lithophanien die gewählten Dicken zusätzlich in der späteren Drucklage testen.
+## Mehrteilige Fotovorlagen
+
+Unter „Vorlagen & Formen“ findest du Fotolaterne, Fotowabe, Mini-Häuschen und den teilbaren Panoramaschirm. „Bauteile und Wandmotive …“ öffnet für Laterne und Häuschen die Auswahl der vier Seiten. Pro Seite kannst du ein separates Foto oder Text übernehmen. Freie Seiten verwenden das bearbeitete Projektfoto. Die abweichenden Motive werden mit der Projektdatei gespeichert.
+
+Über „Druckteile als ZIP exportieren …“ erzeugst du einzelne STL- oder 3MF-Dateien. Entpacke das Archiv und importiere die Druckteile in deinen Slicer. Dort kannst du Verbinder oder Klammern vervielfältigen. Die Montageanleitung liegt im ZIP.
+
+Die Fotowabe skaliert Breite und Höhe gemeinsam. Verwende für eine zusammenhängende Fläche dieselben Maße und dieselbe maximale Wandstärke. Beim Panoramaschirm kannst du den Durchmesser, die Höhe und 3–16 Segmente einstellen. Wenn ein Segment für das gewählte Druckprofil zu breit ist, erhöhe die Segmentzahl.

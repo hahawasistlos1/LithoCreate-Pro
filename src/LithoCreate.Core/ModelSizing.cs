@@ -6,6 +6,12 @@ public static class ModelSizing
     public static PhotoSize Resize(ModelSettings settings,bool widthChanged,double value)
     {
         Validate(settings.Width,settings.Height);if(!double.IsFinite(value)||value is < 5 or > 1000)throw new InvalidDataException("Breite und Höhe: 5–1000 mm eingeben.");
+        if(settings.Shape==Shape.PhotoHoneycomb)
+        {
+            double ratio=Math.Sqrt(3)/2;
+            var hex=widthChanged?new PhotoSize(value,value*ratio):new PhotoSize(value/ratio,value);
+            Validate(hex.Width,hex.Height);return hex;
+        }
         bool linked=settings.SupportsPhotoSizing&&settings.LockDimensions;
         double w=widthChanged?value:linked?value*settings.Width/settings.Height:settings.Width;
         double h=!widthChanged?value:linked?value*settings.Height/settings.Width:settings.Height;

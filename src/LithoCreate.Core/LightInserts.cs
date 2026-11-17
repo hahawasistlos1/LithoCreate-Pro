@@ -53,7 +53,7 @@ public static class LightInserts
     public static (LightInsertOptions Options, string Placement) Suggest(ModelSettings model, LightInsertPreset preset)
     {
         const double clearance = .6;
-        bool round = model.IsShade || model.SupportsSphereOpenings || model.SupportsLampBase;
+        bool round = model.IsShade || model.IsPanorama || model.SupportsSphereOpenings || model.SupportsLampBase;
         double width = model.Width;
         double depth = model.Height;
         string placement = "Separat hinter dem Motiv platzieren.";
@@ -64,6 +64,16 @@ public static class LightInserts
             width = depth = diameter - 2 * model.MaxThickness;
             string rim = model.ShadeMount == ShadeMount.Top ? "oberen" : "unteren";
             placement = $"Maßvorschlag für den {rim} Schirmrand. Einen vorhandenen Montagering bei der Anprobe berücksichtigen.";
+        }
+        else if (model.IsPanorama)
+        {
+            width = depth = model.Diameter - 2 * (model.MaxThickness + 1);
+            placement = "Separaten Träger am offenen Panoramaschirm platzieren und unabhängig abstützen.";
+        }
+        else if (model.HasWallMotifs)
+        {
+            width = depth = model.Width - 15;
+            placement = "Den Einsatz lose auf den Rahmenboden stellen und die Leitung zum rückwärtigen Schlitz führen.";
         }
         else if (model.SupportsSphereOpenings)
         {

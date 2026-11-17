@@ -11,6 +11,7 @@ partial class Program
         {
             var items=Enum.GetValues<Shape>().Select(shape=>new ModelPreset{Name="Form · "+shape,Model=new(){Shape=shape,Width=40,Height=30,Diameter=40,Radius=40,FrameWidth=2,Resolution=1,Angles=new(10,20,30),LockDimensions=true}}).ToList();
             foreach(var item in items.Where(item=>item.Model.IsShade)) LampShade.ApplyTemplate(item.Model);
+            foreach(var item in items.Where(item=>item.Model.HasDesignParts)) DesignParts.ApplyTemplate(item.Model);
             var mounted=new ModelPreset{Name="Rückwand · ÄÖÜ",Model=MountingFixture(4,true)};items.Add(mounted);string path=Path.Combine(output,"model-presets.json");ModelPresetStore.Save(path,items);
             var loaded=ModelPresetStore.Load(path);Require(loaded.Items.Count==items.Count&&JsonSerializer.Serialize(items)==JsonSerializer.Serialize(loaded.Items),"Form-/Zubehörparameter oder Kennungen verändert.");Require(loaded.Items[^1].ToString()=="Rückwand · ÄÖÜ","Auswahl zeigt technischen Typ statt Vorlagenname.");
             var copy=mounted.Clone();copy.Model.BackMountingHoles[0].X+=3;Require(copy.Model.BackMountingHoles[0].X!=mounted.Model.BackMountingHoles[0].X,"Bohrungsliste ist keine tiefe Kopie.");

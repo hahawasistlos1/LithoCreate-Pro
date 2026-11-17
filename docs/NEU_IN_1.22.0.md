@@ -1,0 +1,6 @@
+- Wellenbild mit S-Krümmung und Bogenfenster mit optionalem Standfuß und Aufhängeöffnung ergänzt.
+- Fotowaben mit separat druckbarem Kantenverbinder ergänzt.
+- Fotolaterne mit vier austauschbaren Motiven, LED-Band-Einsatz und Kabelausgang ergänzt.
+- Mini-Häuschen mit abnehmbarem Dach, vier Foto- oder Textwänden und Platz für ein LED-Teelicht ergänzt.
+- Teilbaren Panoramaschirm mit 3–16 Segmenten und Nahtklammern ergänzt.
+- ZIP-Export mit STL- oder 3MF-Einzeldateien, Prüfung des Druckvolumens und Montageanleitung ergänzt.

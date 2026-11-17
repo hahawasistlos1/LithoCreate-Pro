@@ -3,7 +3,7 @@ using System.IO.Compression;
 
 namespace LithoCreate.Core;
 
-public enum Shape { Flat, Curved, Cylinder, Polygon, Sphere, Moon, Heart, Star, Oval, Lightbox, Frame, Nightlight, Disc, Pendant, Drop, CeilingShade, FloorShade, BellShade, FacetedShade }
+public enum Shape { Flat, Curved, Cylinder, Polygon, Sphere, Moon, Heart, Star, Oval, Lightbox, Frame, Nightlight, Disc, Pendant, Drop, CeilingShade, FloorShade, BellShade, FacetedShade, WavePicture, PhotoLantern, PhotoHoneycomb, ArchedWindow, MiniHouse, PanoramaShade }
 public record ShapeInfo(Shape Shape, string Name, string Icon, string Description, string Category)
 {
     public override string ToString()=>Name;
@@ -29,7 +29,13 @@ public static class Templates
         new(Shape.CeilingShade,"Deckenschirm","◓","Konischer Schirm mit optionalem Montagering oben.","Lampenschirme"),
         new(Shape.FloorShade,"Stehleuchtenschirm","▥","Gerader Schirm mit optionalem Montagering unten.","Lampenschirme"),
         new(Shape.BellShade,"Glockenschirm","◠","Geschwungener Mantel mit breitem Schirmrand.","Lampenschirme"),
-        new(Shape.FacetedShade,"Facettenschirm","⬡","Kantiger Schirm mit 3 bis 16 Seiten.","Lampenschirme")];
+        new(Shape.FacetedShade,"Facettenschirm","⬡","Kantiger Schirm mit 3 bis 16 Seiten.","Lampenschirme"),
+        new(Shape.WavePicture,"Wellenbild","≈","Breites Fotorelief auf einer S-förmigen Fläche.","Bilder"),
+        new(Shape.PhotoLantern,"Fotolaterne","▥","Vier wechselbare Fotopaneele mit LED-Einsatz und Kabelausgang.","Lampen"),
+        new(Shape.PhotoHoneycomb,"Fotowabe","⬡","Sechseckige Fotokachel mit separat druckbarem Verbinder.","Bilder"),
+        new(Shape.ArchedWindow,"Bogenfenster","∩","Fotoplatte mit Rundbogen, optionalem Standfuß oder Aufhängung.","Bilder"),
+        new(Shape.MiniHouse,"Mini-Häuschen","⌂","Abnehmbares Dach, wechselbare Wände und Platz für ein LED-Teelicht.","Lampen"),
+        new(Shape.PanoramaShade,"Teilbarer Panoramaschirm","◓","Ein Rundummotiv auf einzeln druckbaren Segmenten mit Nahtklammern.","Lampenschirme")];
 }
 public sealed class ImageEdits
 {
@@ -128,8 +134,14 @@ public sealed class ModelSettings
     public bool BackTurnOnBed90 { get; set; }
     [System.Text.Json.Serialization.JsonIgnore] public bool SupportsBackPanel => Shape==Shape.Lightbox;
     [System.Text.Json.Serialization.JsonIgnore] public bool SupportsHangingTabs => Shape is Shape.Flat or Shape.Frame;
-    [System.Text.Json.Serialization.JsonIgnore] public bool SupportsPhotoSizing => Shape is Shape.Flat or Shape.Frame or Shape.Curved or Shape.Nightlight or Shape.Lightbox;
-    [System.Text.Json.Serialization.JsonIgnore] public bool SupportsStand => Shape is Shape.Flat or Shape.Frame or Shape.Curved or Shape.Nightlight;
+    public bool ArchHangingHole { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore] public bool SupportsPhotoSizing => Shape is Shape.Flat or Shape.Frame or Shape.Curved or Shape.Nightlight or Shape.Lightbox or Shape.WavePicture or Shape.ArchedWindow;
+    [System.Text.Json.Serialization.JsonIgnore] public bool SupportsStand => Shape is Shape.Flat or Shape.Frame or Shape.Curved or Shape.Nightlight or Shape.ArchedWindow;
+    [System.Text.Json.Serialization.JsonIgnore] public bool HasDesignParts => Shape is Shape.PhotoHoneycomb or Shape.PhotoLantern or Shape.MiniHouse or Shape.PanoramaShade;
+    [System.Text.Json.Serialization.JsonIgnore] public bool HasWallMotifs => Shape is Shape.PhotoLantern or Shape.MiniHouse;
+    [System.Text.Json.Serialization.JsonIgnore] public bool IsPanorama => Shape == Shape.PanoramaShade;
+    [System.Text.Json.Serialization.JsonIgnore] public bool IsDesignAssembly => HasWallMotifs || IsPanorama;
+    [System.Text.Json.Serialization.JsonIgnore] public bool IsArch => Shape == Shape.ArchedWindow;
     [System.Text.Json.Serialization.JsonIgnore] public bool SupportsLampBase => Shape is Shape.Cylinder or Shape.Polygon;
     [System.Text.Json.Serialization.JsonIgnore] public bool IsShade => LampShade.Supports(Shape);
     [System.Text.Json.Serialization.JsonIgnore] public bool IsFacetedShade => Shape == Shape.FacetedShade;
@@ -156,6 +168,7 @@ public sealed class ModelSettings
         if (MinThickness < .2 || MaxThickness < MinThickness || MaxThickness > 20) throw new InvalidDataException("Wandstärken: mindestens 0,2 mm; Maximum muss mindestens dem Minimum entsprechen (bis 20 mm).");
         if (Resolution is < .05 or > 3 || Radius < 5 || FrameWidth < 0 || FrameWidth >= Math.Min(Width,Height)/2 || BoxDepth < MaxThickness || BoxDepth > 100 || Sides is < 3 or > 16 || MemoryMb is < 64 or > 2048) throw new InvalidDataException("Auflösung, Radius, Rahmen, Tiefe, Seitenzahl oder Speichergrenze liegt außerhalb des gültigen Bereichs.");
         if(IsShade) LampShade.Validate(this);
+        DesignParts.Validate(this);
         if (Shape is Shape.Curved or Shape.Nightlight && Width/Radius > Math.PI*1.9) throw new InvalidDataException("Der Bogen ist zu groß. Radius erhöhen oder Breite reduzieren.");
         if (Shape is Shape.Sphere or Shape.Moon or Shape.Cylinder or Shape.Polygon && Diameter/2 <= MaxThickness+1) throw new InvalidDataException("Durchmesser muss größer als die doppelte Wandstärke sein.");
         if (Shape == Shape.Pendant && (HoleDiameter < 1 || HoleDiameter >= Diameter*.5)) throw new InvalidDataException("Bohrung: mindestens 1 mm und kleiner als der halbe Durchmesser.");
@@ -214,6 +227,8 @@ public sealed class ProjectData
     public ImageEdits Edits { get; set; } = new();
     public PrinterProfile Printer { get; set; } = new();
     public PrintSetOptions PrintLayout { get; set; } = new();
+    [System.Text.Json.Serialization.JsonIgnore]
+    public byte[]?[] WallMotifs { get; } = new byte[4][];
     public void Validate()
     {
         if(Model is null||Edits is null||Printer is null||PrintLayout is null)throw new InvalidDataException("Projekteinstellungen fehlen.");
@@ -223,6 +238,7 @@ public sealed class ProjectData
 }
 public static class ProjectStore
 {
+    public const int WallImageLimit = 16 * 1024 * 1024;
     public static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
     public static void Save(string path, ProjectData data, byte[] image, byte[]? thumbnail = null)
     {
@@ -230,6 +246,8 @@ public static class ProjectStore
         if(data.Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14 or 15))throw new InvalidDataException("Diese Projektversion wird nicht unterstützt.");
         data.Version=15;
         if(image.Length is 0 or > 64*1024*1024)throw new InvalidDataException("Bilddaten müssen vorhanden und höchstens 64 MB groß sein.");
+        if(data.WallMotifs.Any(wall=>wall is { Length: 0 or > WallImageLimit }))
+            throw new InvalidDataException("Ein Wandmotiv darf höchstens 16 MB groß sein.");
         var temp = path+"."+Guid.NewGuid().ToString("N")+".tmp";
         try
         {
@@ -238,6 +256,12 @@ public static class ProjectStore
                 using(var stream = zip.CreateEntry("project.json").Open()) JsonSerializer.Serialize(stream,data,Json);
                 using(var stream = zip.CreateEntry("source.bin",CompressionLevel.Fastest).Open()) stream.Write(image);
                 if(thumbnail != null) { using var stream=zip.CreateEntry("preview.png").Open(); stream.Write(thumbnail); }
+                for(int i=0;i<data.WallMotifs.Length;i++)
+                    if(data.WallMotifs[i] is byte[] wall)
+                    {
+                        using var stream=zip.CreateEntry($"wand-{i+1}.png",CompressionLevel.Fastest).Open();
+                        stream.Write(wall);
+                    }
             }
             File.Move(temp,path,true);
         }
@@ -268,6 +292,15 @@ public static class ProjectStore
         data.Validate();
         var entry=zip.GetEntry("source.bin") ?? throw new InvalidDataException("Das Originalbild fehlt.");
         if(entry.Length is 0 or > 64*1024*1024) throw new InvalidDataException("Bilddaten müssen vorhanden und höchstens 64 MB groß sein.");
+        for(int i=0;i<data.WallMotifs.Length;i++)
+            if(zip.GetEntry($"wand-{i+1}.png") is ZipArchiveEntry wall)
+            {
+                if(wall.Length is 0 or > WallImageLimit)throw new InvalidDataException("Ein gespeichertes Wandmotiv ist leer oder zu groß.");
+                using var stream=wall.Open();
+                using var copy=new MemoryStream((int)wall.Length);
+                stream.CopyTo(copy);
+                data.WallMotifs[i]=copy.ToArray();
+            }
         using var source=entry.Open(); using var buffer=new MemoryStream(); source.CopyTo(buffer);
         return(data,buffer.ToArray());
     }

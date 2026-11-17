@@ -24,8 +24,9 @@ partial class Program
         output=Path.GetFullPath(args.FirstOrDefault()=="--extensions"?args[1]:args.FirstOrDefault()??"artifacts/tests");Directory.CreateDirectory(output);
         if(args.FirstOrDefault()=="--extensions"){output=Path.GetFullPath(args[1]);Directory.CreateDirectory(output);TestExtensions();return failed==0?0:1;}
         if(args.FirstOrDefault()=="--shades"){output=Path.GetFullPath(args[1]);Directory.CreateDirectory(output);TestLampShades();return failed==0?0:1;}
+        if(args.FirstOrDefault()=="--new-designs"){output=Path.GetFullPath(args[1]);Directory.CreateDirectory(output);TestNewDesigns();return failed==0?0:1;}
         var clock=Stopwatch.StartNew();var gray=new GrayImage(32,24,Enumerable.Range(0,768).Select(i=>(byte)((i%32)*255/31)).ToArray());
-        foreach(var shape in Enum.GetValues<Shape>())
+        foreach(var shape in SingleBodyShapes())
         {
             Test("Topologie und Datei-Roundtrip: "+shape,()=>
             {
@@ -290,7 +291,7 @@ partial class Program
         {
             var mesh=MeshGenerator.Generate(gray,new(){Resolution=1},false);using var cts=new CancellationTokenSource();cts.Cancel();Throws<OperationCanceledException>(()=>new CrossSectionIndex(mesh,cts.Token));var index=new CrossSectionIndex(mesh);Throws<OperationCanceledException>(()=>index.Slice(10,cts.Token));Throws<InvalidDataException>(()=>index.Slice(double.NaN));
         });
-        foreach(var shape in Enum.GetValues<Shape>())Test("Schichtflächen und Meshvolumen: "+shape,()=>
+        foreach(var shape in SingleBodyShapes())Test("Schichtflächen und Meshvolumen: "+shape,()=>
         {
             var mesh=MeshGenerator.Generate(gray,new(){Shape=shape,Width=48,Height=36,Diameter=40,Radius=40,Resolution=1,FrameWidth=2},false);var index=new CrossSectionIndex(mesh);double volume=0,step=index.Height/180;
             for(int i=0;i<180;i++){var section=index.Slice(index.Bottom+(i+.5)*step);Require(section.IsRegular,$"Unregelmäßige Kontur bei {i}: {section.IrregularVertices} Kontakte, {section.OpenContours} offene Pfade");volume+=section.Area*step;}
@@ -338,7 +339,7 @@ partial class Program
         });
         Test("Druckausrichtung erhält alle Formen und Foto-UVs",()=>
         {
-            foreach(var shape in Enum.GetValues<Shape>())
+            foreach(var shape in SingleBodyShapes())
             {
                 var settings=new ModelSettings{Shape=shape,Width=40,Height=30,Diameter=40,Radius=45,Resolution=2};var canonical=MeshGenerator.Generate(gray,settings,false);double volume=canonical.Validate().Volume;
                 settings.PrintOrientation=PrintOrientation.LeftEdgeDown;settings.TurnOnBed90=true;var rotated=MeshGenerator.Generate(gray,settings,false);var check=rotated.Validate();Require(check.IsValid&&Math.Abs(check.Volume-volume)<Math.Max(.05,volume*.00001),"Volumen oder Topologie verändert: "+shape);Require(canonical.TextureCoordinates.SequenceEqual(rotated.TextureCoordinates)&&canonical.PhotoVertices.SequenceEqual(rotated.PhotoVertices)&&canonical.Triangles.SequenceEqual(rotated.Triangles),"Fotozuordnung oder Dreieckanordnung verändert: "+shape);
@@ -606,7 +607,7 @@ partial class Program
         });
         Test("Freie Druckwinkel erhalten alle Formen und Foto-UVs",()=>
         {
-            foreach(var shape in Enum.GetValues<Shape>())
+            foreach(var shape in SingleBodyShapes())
             {
                 var s=new ModelSettings{Shape=shape,Width=48,Height=36,Diameter=40,Radius=40,FrameWidth=2,Resolution=1};var original=MeshGenerator.Generate(gray,s,false);s.Angles=new(23,-17,38);var rotated=MeshGenerator.Generate(gray,s,false);var report=rotated.Validate();Require(report.IsValid&&Math.Abs(report.Volume-original.Validate().Volume)<Math.Max(.2,report.Volume*.00003),"Form bei Rotation ungültig: "+shape);Require(rotated.Triangles.SequenceEqual(original.Triangles)&&rotated.TextureCoordinates.SequenceEqual(original.TextureCoordinates)&&rotated.PhotoVertices.SequenceEqual(original.PhotoVertices),"Foto oder Topologie bei Rotation verändert: "+shape);
             }
@@ -649,6 +650,7 @@ partial class Program
         TestPrinterProfiles();
         TestExtensions();
         TestLampShades();
+        TestNewDesigns();
         Console.WriteLine($"ERGEBNIS: {passed} bestanden, {failed} fehlgeschlagen; {clock.Elapsed.TotalSeconds:N1} s; Peak Working Set {Process.GetCurrentProcess().PeakWorkingSet64/1024/1024} MB");return failed==0?0:1;
     }
     sealed class ActionProgress(Action<double> action):IProgress<double>{public void Report(double value)=>action(value);}
@@ -711,7 +713,10 @@ partial class Program
         {
             var settings=new ModelSettings{Shape=shape.Shape,Width=100,Height=90,Diameter=85,FrameWidth=4,Resolution=1};
             if(settings.IsShade) LampShade.ApplyTemplate(settings);
-            var mesh=MeshGenerator.Generate(source.Gray,settings,true);var viewport=new LithoCreate.App.Controls.ModelViewport();viewport.SetMesh(mesh,source.Gray,true);viewport.View("grid");viewport.Measure(new System.Windows.Size(300,210));viewport.Arrange(new System.Windows.Rect(0,0,300,210));viewport.UpdateLayout();System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.ContextIdle);
+            if(settings.HasDesignParts||settings.IsArch||settings.Shape==Shape.WavePicture) DesignParts.ApplyTemplate(settings);
+            var mesh=MeshGenerator.Generate(source.Gray,settings,true);
+            var lighting=settings.HasWallMotifs?WallImages.Atlas(source.Gray,new GrayImage?[4],default):source.Gray;
+            var viewport=new LithoCreate.App.Controls.ModelViewport();viewport.SetMesh(mesh,lighting,true);viewport.View("grid");viewport.Measure(new System.Windows.Size(300,210));viewport.Arrange(new System.Windows.Rect(0,0,300,210));viewport.UpdateLayout();System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(()=>{},System.Windows.Threading.DispatcherPriority.ContextIdle);
             var bitmap=new RenderTargetBitmap(300,210,96,96,PixelFormats.Pbgra32);bitmap.Render(viewport);File.WriteAllBytes(Path.Combine(directory,shape.Shape+".png"),ImageProcessor.Png(bitmap));
         }
         Console.WriteLine($"{Templates.All.Length} Formvorschauen gerendert.");return 0;

@@ -197,6 +197,11 @@
           <Button Content="Eigene Vorlagen verwalten →" Command="{Binding Navigate}" CommandParameter="Templates" Margin="0,6,0,8" ToolTip="Modelleinstellungen speichern und auf andere Fotos anwenden"/>
           <TextBlock Text="{Binding SelectedShape.Description}" Style="{StaticResource Muted}" FontSize="11" Margin="0,6,0,8"/>
           <Button Content="Lichteinsatz mit Kabelausgang …" Click="OpenLightInserts" Margin="0,0,0,8"/>
+          <Button x:Name="DesignPartsButton" Content="Bauteile und Wandmotive …" Click="OpenDesignParts" Visibility="{Binding Model.HasWallMotifs,Converter={StaticResource Bool}}" Margin="0,0,0,8"/>
+          <Button Content="Bauteile und Montage …" Click="OpenDesignParts" Margin="0,0,0,8">
+           <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><MultiDataTrigger><MultiDataTrigger.Conditions><Condition Binding="{Binding Model.HasDesignParts}" Value="True"/><Condition Binding="{Binding Model.HasWallMotifs}" Value="False"/></MultiDataTrigger.Conditions><Setter Property="Visibility" Value="Visible"/></MultiDataTrigger></Style.Triggers></Style></Button.Style>
+          </Button>
+          <CheckBox Content="Öffnung zum Aufhängen ergänzen" IsChecked="{Binding Model.ArchHangingHole}" Visibility="{Binding Model.IsArch,Converter={StaticResource Bool}}" Margin="0,0,0,8"/>
           <StackPanel x:Name="LampShadePanel" Visibility="{Binding Model.IsShade,Converter={StaticResource Bool}}">
            <TextBlock Text="Schirmmaße · mm" Style="{StaticResource Section}"/>
            <TextBlock Text="Außen-Ø oben"/><TextBox x:Name="ShadeTopBox" Text="{Binding Model.ShadeTopDiameter,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Außendurchmesser oben"/>
@@ -277,10 +282,14 @@
           <StackPanel Visibility="{Binding Model.IsShade,Converter={StaticResource Not}}">
           <TextBlock Text="Abmessungen · mm" Style="{StaticResource Section}"/>
           <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="112"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-           <TextBlock Text="Breite" VerticalAlignment="Center"/><TextBox Grid.Column="1" x:Name="ModelWidthBox" Text="{Binding ModelWidth,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation" ToolTip="Breite für flache und gebogene Modelle"/>
+           <TextBlock Text="Breite" VerticalAlignment="Center" Visibility="{Binding Model.IsPanorama,Converter={StaticResource Not}}"/><TextBox Grid.Column="1" x:Name="ModelWidthBox" Visibility="{Binding Model.IsPanorama,Converter={StaticResource Not}}" Text="{Binding ModelWidth,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation" ToolTip="Breite des Motivs oder eines einzelnen Wandpaneels"/>
            <TextBlock Grid.Row="1" Text="Höhe" VerticalAlignment="Center"/><TextBox Grid.Row="1" Grid.Column="1" x:Name="ModelHeightBox" Text="{Binding ModelHeight,UpdateSourceTrigger=PropertyChanged,ValidatesOnExceptions=True,NotifyOnValidationError=True,StringFormat=0.###}" Validation.Error="OnAngleValidation"/>
            <TextBlock Grid.Row="2" Text="Durchmesser" VerticalAlignment="Center"/><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Model.Diameter,UpdateSourceTrigger=PropertyChanged}" ToolTip="Für Kugeln, Zylinder, Plaketten und Anhänger"/>
           </Grid>
+          <StackPanel Visibility="{Binding Model.IsPanorama,Converter={StaticResource Bool}}" Margin="0,6,0,0">
+           <TextBlock Text="Anzahl der Schirmsegmente · 3–16"/>
+           <TextBox x:Name="PanoramaSegmentCount" Text="{Binding Model.Sides,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Anzahl der Schirmsegmente"/>
+          </StackPanel>
           <StackPanel Visibility="{Binding SupportsPhotoSizing,Converter={StaticResource Bool}}" Margin="0,5,0,8"><CheckBox Content="Breite und Höhe koppeln" IsChecked="{Binding LockDimensions}" ToolTip="Erhält das aktuelle Verhältnis der Modellmaße. Modelländerungen gehören nicht zum Bild-Undo."/><Button Content="Höhe an Motivformat anpassen" Command="{Binding FitDimensionsToImage}" ToolTip="Breite bleibt gleich. Die Höhe wird aus dem aktuellen Zuschnitt und der Bilddrehung berechnet; anschließend werden die Maße gekoppelt."/><TextBlock Text="Aktueller Bildausschnitt inklusive Drehung. Die Fotofläche wird angepasst; Rahmen und Zubehörmaße prüfen." Style="{StaticResource Muted}" FontSize="10"/></StackPanel>
           </StackPanel>
           <TextBlock Text="Wandstärke · mm" Style="{StaticResource Section}"/>
@@ -299,8 +308,11 @@
          <StackPanel x:Name="ExportPanel" Visibility="{Binding IsExport,Converter={StaticResource Bool}}" Margin="0,18,0,0">
           <Border Background="#0D3023" CornerRadius="7" Padding="12"><StackPanel><TextBlock Text="{Binding ExportHeading}" Foreground="#6CE99B" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/><TextBlock Text="Prüfung und erneutes Einlesen sind im Export enthalten." Style="{StaticResource Muted}" Margin="0,8,0,0" FontSize="11"/></StackPanel></Border>
           <TextBlock Text="{Binding PrintSizeInfo}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Style="{StaticResource Muted}" Margin="0,10,0,4"/><TextBlock Text="{Binding PrinterWarning}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" TextWrapping="Wrap" FontSize="11" Foreground="#91CFB6"/>
-          <Button Content="⇩   Exportieren als STL" Command="{Binding ExportStl}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold" Margin="0,14,0,5"/>
-          <Button Content="⇩   Exportieren als 3MF" Command="{Binding Export3Mf}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold"/>
+          <StackPanel Visibility="{Binding Model.IsDesignAssembly,Converter={StaticResource Not}}">
+           <Button Content="⇩   Exportieren als STL" Command="{Binding ExportStl}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold" Margin="0,14,0,5"/>
+           <Button Content="⇩   Exportieren als 3MF" Command="{Binding Export3Mf}" Visibility="{Binding IsPrintSetMode,Converter={StaticResource Not}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold"/>
+          </StackPanel>
+          <Button Content="Druckteile als ZIP exportieren …" Click="OpenDesignParts" Visibility="{Binding Model.HasDesignParts,Converter={StaticResource Bool}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold" Margin="0,8,0,4"/>
           <Button Content="Alle Teile als 3MF-Drucksatz" Command="{Binding ExportPrintSet}" Visibility="{Binding HasParts,Converter={StaticResource Bool}}" Background="#12813B" BorderBrush="#50E67D" FontWeight="SemiBold" ToolTip="Zuerst Drucksatz · alle Teile berechnen; anschließend beide vorbereiteten Objekte als 3MF exportieren."/>
           <Button Content="Vorschau als PNG speichern" Command="{Binding ExportPng}"/>
           <Button Content="Bearbeitbares Projekt speichern" Command="{Binding Save}"/>

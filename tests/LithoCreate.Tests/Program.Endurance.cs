@@ -12,7 +12,7 @@ partial class Program
         var image=new GrayImage(64,48,Enumerable.Range(0,64*48).Select(i=>(byte)(i%256)).ToArray());
         while(watch.Elapsed.TotalMinutes<minutes)
         {
-            foreach(var shape in Enum.GetValues<Shape>())
+            foreach(var shape in SingleBodyShapes())
             {
                 var model=new ModelSettings{Shape=shape,Width=64,Height=48,Diameter=48,Radius=50,Resolution=.6,MemoryMb=128,FrameWidth=2};var mesh=MeshGenerator.Generate(image,model,false);var report=mesh.Validate();Require(report.IsValid,"Dauertest: "+shape);
                 var index=new CrossSectionIndex(mesh);var section=index.Slice(index.Bottom+index.Height*.51);Require(section.Paths.Count>0,"Dauertest: Schnitt fehlt.");ModelExporter.Export(Path.Combine(directory,shape+".3mf"),mesh);models++;

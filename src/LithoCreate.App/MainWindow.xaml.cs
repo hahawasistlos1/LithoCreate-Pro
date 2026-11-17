@@ -76,6 +76,16 @@ public partial class MainWindow : Window
     }
     void OpenMeshTools(object sender,RoutedEventArgs e) => ShowMeshTools(false);
     void OpenLightInserts(object sender,RoutedEventArgs e) => ShowMeshTools(true);
+    void OpenDesignParts(object sender,RoutedEventArgs e)
+    {
+        if(vm is not { Busy:false,InputError:false }||!vm.Model.HasDesignParts)return;
+        try
+        {
+            vm.Model.Validate();
+            new DesignPartsWindow(vm){Owner=this}.ShowDialog();
+        }
+        catch(Exception ex){vm.Status=ex.Message;}
+    }
     void ShowMeshTools(bool showInserts)
     {
         if(vm==null)return;

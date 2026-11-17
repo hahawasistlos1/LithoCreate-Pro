@@ -9,7 +9,7 @@ from zipfile import ZipFile
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--version',default='1.21.3')
+    parser.add_argument('--version',default='1.22.0')
     parser.add_argument('--format',type=int,default=15)
     parser.add_argument('--examples',type=int)
     args=parser.parse_args();version=args.version

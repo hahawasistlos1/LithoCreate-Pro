@@ -40,7 +40,7 @@ partial class Program
             var shadePanel=(FrameworkElement)window.FindName("LampShadePanel");
             var shadeMount=(ComboBox)window.FindName("ShadeMountCombo");
             var shadeMountStyle=(ComboBox)window.FindName("ShadeMountStyleCombo");
-            foreach (var shade in vm.ShadeShapes)
+            foreach (var shade in vm.ShadeShapes.Where(shade=>LampShade.Supports(shade.Shape)))
             {
                 vm.SelectTemplate.Execute(shade);
                 var preview=vm.UpdatePreview();
@@ -85,6 +85,27 @@ partial class Program
                     Capture(window,$"DPI-{scale*100:0}-Strebenring",scale);
                     vm.Camera.Execute("reset");
                 }
+            }
+            foreach (var shape in Templates.All.Where(shape=>shape.Shape>=Shape.WavePicture))
+            {
+                vm.SelectTemplate.Execute(shape);
+                var preview=vm.UpdatePreview();
+                PumpUntil(()=>preview.IsCompleted);
+                Require(vm.PreviewMesh!=null,$"Vorschau fehlt für {shape.Name}.");
+                ((ScrollViewer)window.FindName("OptionsScroller")).ScrollToTop();
+                window.UpdateLayout();
+                Capture(window,$"DPI-{scale*100:0}-{shape.Shape}",scale);
+                if(shape.Shape!=Shape.PhotoLantern)continue;
+                Require(((Button)window.FindName("DesignPartsButton")).IsVisible,"Bauteile-Dialog ist im Editor nicht erreichbar.");
+                var design = new DesignPartsWindow(vm){Owner=window,Width=650,Height=1080/scale};
+                design.Show();
+                var text = (TextBox)design.FindName("WallText");
+                Require(text.IsVisible,"Textmotiv-Eingabe fehlt.");
+                text.Text="Zuhause";
+                ((Button)design.FindName("ApplyWallText")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Require(vm.Project.WallMotifs[0] is {Length:>0},"Textmotiv kommt im Projekt nicht an.");
+                Capture(design,$"DPI-{scale*100:0}-Wandmotive",scale);
+                design.Close();
             }
             vm.SelectedShape=vm.OtherShapes.First();
             var tools=new MeshToolsWindow(vm){Owner=window,Width=1920/scale,Height=1080/scale};tools.Show();var import=tools.ImportFile(fixture);PumpUntil(()=>import.IsCompleted);Require(((Button)tools.FindName("ExportButton")).IsEnabled,"Importierter Körper nicht exportierbar.");Capture(tools,$"DPI-{scale*100:0}-STL",scale);

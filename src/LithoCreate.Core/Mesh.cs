@@ -74,6 +74,18 @@ public static class MeshGenerator
     public static Mesh Generate(GrayImage image,ModelSettings s,bool preview,CancellationToken token=default,IProgress<double>? progress=null)
     {
         s.Validate();
+        if(s.HasDesignParts)
+        {
+            if(!preview&&s.Shape!=Shape.PhotoHoneycomb)throw new InvalidDataException("Die Einzelteile über die Bauteil-Auswahl exportieren.");
+            var design=s.Shape==Shape.PhotoHoneycomb?GeneratePanel(image,s,preview,token,progress):DesignParts.Preview(s,image,[],token);
+            if(s.Shape==Shape.PhotoHoneycomb)PrintPlacement.Apply(design,s.PrintOrientation,s.TurnOnBed90,token,s.Angles);
+            progress?.Report(1);
+            return design;
+        }
+        return GeneratePanel(image,s,preview,token,progress,applyPlacement:true);
+    }
+    internal static Mesh GeneratePanel(GrayImage image,ModelSettings s,bool preview,CancellationToken token,IProgress<double>? progress=null,bool applyPlacement=false)
+    {
         if(s.IsShade)
         {
             var shade=LampShade.Generate(image,s,preview,token,progress);
@@ -104,6 +116,8 @@ public static class MeshGenerator
         int nx=Math.Clamp((int)Math.Ceiling(w/step),8,2400),ny=Math.Clamp((int)Math.Ceiling(h/step),4,2400);
         if(s.Shape==Shape.Polygon) nx=(int)Math.Ceiling(nx/(double)s.Sides)*s.Sides;
         if(radial)nx=(int)Math.Ceiling(nx/20.0)*20;
+        if(s.Shape==Shape.PhotoHoneycomb&&ny%2!=0)ny++;
+        if(s.IsArch&&nx%2!=0)nx++;
         m.ActualResolution=Math.Max(w/nx,h/ny);
         double Thickness(double u,double v)
         {
@@ -115,7 +129,7 @@ public static class MeshGenerator
         else Grid();
         m.OrientOutward();
         if(s.EffectivePart==ModelPart.Assembly)m=SphereSocket.Assemble(m,SphereSocket.Generate(s,preview,token),s.SocketPlateHeight,token);
-        else PrintPlacement.Apply(m,s.PrintOrientation,s.TurnOnBed90,token,s.Angles);
+        else if(applyPlacement)PrintPlacement.Apply(m,s.PrintOrientation,s.TurnOnBed90,token,s.Angles);
         progress?.Report(1);return m;
 
         int V(double x,double y,double z,double u=.5,double v=.5,bool photo=true) { m.Vertices.Add(new((float)x,(float)y,(float)z));m.TextureCoordinates.Add(new((float)u,(float)(1-v)));m.PhotoVertices.Add(photo);return m.Vertices.Count-1; }
@@ -128,11 +142,24 @@ public static class MeshGenerator
             bool stand=s.SupportsStand && s.StandEnabled;
             bool floor=cylinder && s.LampBaseThickness>0;
             int rowCount=ny+1+(stand?2:0);
+            bool arch=s.Shape==Shape.ArchedWindow,honey=s.Shape==Shape.PhotoHoneycomb;
+            int holeHalf=Math.Max(1,(int)Math.Round(2.5/s.Width*nx));
+            int holeTop=ny-Math.Max(1,(int)Math.Round(4/s.Height*ny));
+            int holeBottom=holeTop-Math.Max(1,(int)Math.Round(5/s.Height*ny));
+            if(stand){holeBottom+=2;holeTop+=2;}
+            int holeLeft=nx/2-holeHalf,holeRight=(nx+1)/2+holeHalf;
+            int[,]? ids=arch&&s.ArchHangingHole?new int[rowCount,cols]:null;
+            bool Hole(int i,int j)=>ids!=null&&i>=holeLeft&&i<holeRight&&j>=holeBottom&&j<holeTop;
             for(int side=0;side<2;side++) for(int j=0;j<rowCount;j++)
             {
                 Check(side*rowCount+j);
                 for(int i=0;i<cols;i++)
                 {
+                    if(ids!=null)
+                    {
+                        if(i>holeLeft&&i<holeRight&&j>holeBottom&&j<holeTop)continue;
+                        if(side==0)ids[j,i]=m.Vertices.Count;
+                    }
                     double u=tabs?.U[i]??i/(double)nx,v=stand?Math.Max(0,j-2)/(double)ny:j/(double)ny,t=side==0?Thickness(u,v):0;
                     if(cylinder)
                     {
@@ -149,6 +176,24 @@ public static class MeshGenerator
                         double x=(u-.5)*s.Width,y=stand?(j==0?0:j==1?s.StandHeight:s.StandHeight+v*s.Height):v*s.Height;
                         bool border=s.FrameWidth>0&&(Math.Min(u,1-u)*s.Width<s.FrameWidth || Math.Min(v,1-v)*s.Height<s.FrameWidth);
                         if(border&&side==0)t=s.MaxThickness+1;
+                        if(arch&&!(stand&&j<2))
+                        {
+                            double rise=Math.Min(s.Width*.5,s.Height*.65);
+                            double top=s.Height-rise+rise*Math.Sqrt(Math.Max(0,1-Math.Pow(2*u-1,2)));
+                            y=(stand?s.StandHeight:0)+v*top;
+                            if(side==0&&s.ArchHangingHole&&i>=holeLeft-1&&i<=holeRight+1&&j>=holeBottom-1&&j<=holeTop+1)t=s.MaxThickness+1;
+                        }
+                        if(honey)
+                        {
+                            double rowWidth=s.Width*(1-Math.Abs(v-.5));
+                            x=(u-.5)*rowWidth;
+                            double sideScale=Math.Sqrt(1+Math.Pow(s.Width/(2*s.Height),2));
+                            if(side==0&&(Math.Min(u,1-u)*rowWidth/sideScale<Math.Max(5,s.FrameWidth)||
+                                         Math.Min(v,1-v)*s.Height<Math.Max(5,s.FrameWidth)))t=s.MaxThickness+1;
+                            u=x/s.Width+.5;
+                            if(side==0&&t!=s.MaxThickness+1)t=Thickness(u,v);
+                        }
+                        if(s.Shape==Shape.WavePicture){V(x,y,t+Math.Sin((u-.5)*Math.Tau)*Math.Min(s.Width*.10,s.Radius*.25),u,v);continue;}
                         if(s.Shape==Shape.Lightbox&&border&&side==1)t=-s.BoxDepth;
                         if(stand&&j<2)t=side==0?s.StandDepth/2:-s.StandDepth/2;
                         if(s.Shape is Shape.Curved or Shape.Nightlight)
@@ -157,11 +202,19 @@ public static class MeshGenerator
                     }
                 }
             }
-            int offset=cols*rowCount;
-            int Id(int x,int y)=>y*cols+(x%cols);
+            int offset=m.Vertices.Count/2;
+            int Id(int x,int y)=>ids==null?y*cols+(x%cols):ids[y,x];
             for(int j=0;j<rowCount-1;j++)for(int i=0;i<nx;i++)
             {
                 int a=Id(i,j),b=Id(i+1,j),c=Id(i+1,j+1),d=Id(i,j+1);
+                if(Hole(i,j))
+                {
+                    if(!Hole(i,j-1))Edge(b,a);
+                    if(!Hole(i+1,j))Edge(c,b);
+                    if(!Hole(i,j+1))Edge(d,c);
+                    if(!Hole(i-1,j))Edge(a,d);
+                    continue;
+                }
                 m.Quad(a,b,c,d);m.Quad(a+offset,d+offset,c+offset,b+offset);
             }
             for(int i=0;i<nx;i++)

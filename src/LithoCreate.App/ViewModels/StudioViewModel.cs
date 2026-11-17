@@ -51,11 +51,12 @@ public sealed partial class StudioViewModel : INotifyPropertyChanged
     public double StraightenAngle {get=>Edits.StraightenAngle;set{if(Edits.StraightenAngle.Equals(value))return;Edits.StraightenAngle=value;Notify();Changed();}}
     public PrinterProfile Printer=>project.Printer;
     public ShapeInfo[] Shapes=>Templates.All;
-    public IEnumerable<ShapeInfo> ShadeShapes=>Shapes.Where(s=>LampShade.Supports(s.Shape));
-    public IEnumerable<ShapeInfo> OtherShapes=>Shapes.Where(s=>!LampShade.Supports(s.Shape));
+    public IEnumerable<ShapeInfo> ShadeShapes=>Shapes.Where(s=>s.Category=="Lampenschirme");
+    public IEnumerable<ShapeInfo> OtherShapes=>Shapes.Where(s=>s.Category!="Lampenschirme");
     public ObservableCollection<RecentProject> Recent {get;}=[];
     public BitmapSource Image=>ShowOriginal?source:processed?.Bitmap??source;
     public BitmapSource Original=>source;
+    internal byte[] OriginalBytes=>sourceBytes;
     public BitmapSource ComparisonBefore=>processed?.BeforeBitmap??source;
     public bool CompareEnabled {get=>compareEnabled;set{compareEnabled=value;Notify();Notify(nameof(IsPhotoComparison));}}
     public bool IsPhotoComparison=>CompareEnabled&&!ShowOriginal;
@@ -85,6 +86,7 @@ public sealed partial class StudioViewModel : INotifyPropertyChanged
             if(value==null || value.Shape==Model.Shape) return;
             Model.Shape=value.Shape;
             if(Model.IsShade) LampShade.ApplyTemplate(Model);
+            if(Model.HasDesignParts||Model.IsArch||Model.Shape==Shape.WavePicture) DesignParts.ApplyTemplate(Model);
             Notify();
             Notify(nameof(Model));
             NotifyParts();
@@ -168,18 +170,25 @@ public sealed partial class StudioViewModel : INotifyPropertyChanged
         if(InputError){ClearPreview();Status="Bitte zuerst die ungültige Eingabe korrigieren.";return;}
         previewCts?.Cancel();var cts=new CancellationTokenSource();previewCts=cts;
         var settings=Model.Clone();var edits=Edits.Clone();var original=source;
+        var wallBytes=settings.HasWallMotifs?(byte[]?[])project.WallMotifs.Clone():[];
         try
         {
             Status="Vorschaumodell wird berechnet …";
-            var result=await Task.Run(()=>{var pic=ImageProcessor.Process(original,edits,cts.Token);var mesh=MeshGenerator.Generate(pic.Gray,settings,true,cts.Token);return(pic,mesh);},cts.Token);
+            var result=await Task.Run(()=>
+            {
+                var pic=ImageProcessor.Process(original,edits,cts.Token);
+                if(!settings.HasWallMotifs)return(pic,mesh:MeshGenerator.Generate(pic.Gray,settings,true,cts.Token),lighting:pic.Gray);
+                var walls=WallImages.Decode(wallBytes,cts.Token);
+                return(pic,mesh:DesignParts.Preview(settings,pic.Gray,walls,cts.Token),lighting:WallImages.Atlas(pic.Gray,walls,cts.Token));
+            },cts.Token);
             if(cts.IsCancellationRequested)return;
             processed=result.pic;PreviewMesh=result.mesh;Notify(nameof(Image));Notify(nameof(ComparisonBefore));
             int max=processed.Histogram.Max();const string bars="▁▂▃▄▅▆▇█";Histogram=string.Concat(Enumerable.Range(0,48).Select(i=>bars[Math.Clamp((int)(7.0*processed.Histogram.Skip(i*256/48).Take(6).Max()/Math.Max(1,max)),0,7)]));Notify(nameof(Histogram));
             var b=result.mesh.Bounds();var size=b.Max-b.Min;
             MeshInfo=$"{size.X:N1} × {size.Y:N1} × {size.Z:N1} mm\n{result.mesh.Triangles.Count:N0} Dreiecke · Vorschau\nEffektives Raster: {result.mesh.ActualResolution:N2} mm";Notify(nameof(MeshInfo));
             var printSize=new System.Numerics.Vector3(size.X,size.Z,size.Y);PrintSizeInfo=$"{(IsAssemblyPart?"Montagemaße":"Druckmaße")} · B × T × H\n{printSize.X:N2} × {printSize.Y:N2} × {printSize.Z:N2} mm";
-            PrinterWarning=IsAssemblyPart?"Montageansicht: Körper und Zubehör einzeln prüfen und exportieren.":PrintPlacement.Fits(printSize,Printer)?"✓ Modell passt in das gewählte Druckvolumen.":"⚠ Modell überschreitet das Druckvolumen in der aktuellen Ausrichtung.";Notify(nameof(PrinterWarning));
-            MeshReady?.Invoke(result.mesh,processed.Gray);if(resetForPlacement){resetForPlacement=false;CameraRequested?.Invoke("reset");}SetSectionBounds(result.mesh);QueueSection();CommandManager.InvalidateRequerySuggested();Status="Vorschau aktualisiert · Export wird mit höherer Detailauflösung berechnet.";
+            PrinterWarning=IsAssemblyPart?"Montageansicht · Die Druckmaße werden für jedes Einzelteil beim Export geprüft.":PrintPlacement.Fits(printSize,Printer)?"✓ Modell passt in das gewählte Druckvolumen.":"⚠ Modell überschreitet das Druckvolumen in der aktuellen Ausrichtung.";Notify(nameof(PrinterWarning));
+            MeshReady?.Invoke(result.mesh,result.lighting);if(resetForPlacement){resetForPlacement=false;CameraRequested?.Invoke("reset");}SetSectionBounds(result.mesh);QueueSection();CommandManager.InvalidateRequerySuggested();Status="Vorschau aktualisiert · Export wird mit höherer Detailauflösung berechnet.";
         }
         catch(OperationCanceledException) { }
         catch(Exception ex){ClearPreview();processed=null;Notify(nameof(Image));Notify(nameof(ComparisonBefore));Status=ex.Message;}

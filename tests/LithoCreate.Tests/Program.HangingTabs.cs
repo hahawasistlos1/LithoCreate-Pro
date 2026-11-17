@@ -44,7 +44,7 @@ partial class Program
         Test("Aufhängelaschen: Grenzen, inaktive Formen und Abbruch",()=>
         {
             foreach(Action<ModelSettings> change in new Action<ModelSettings>[]{s=>s.TabWidth=5,s=>s.TabHeight=41,s=>s.TabHoleDiameter=1,s=>s.TabHoleDiameter=11,s=>s.TabInset=-1,s=>s.TabInset=30,s=>s.FrameWidth=1,s=>s.TabHeight=double.NaN}){var s=TabFixture();change(s);Throws<InvalidDataException>(s.Validate);}
-            foreach(var shape in Enum.GetValues<Shape>().Where(t=>t is not (Shape.Flat or Shape.Frame)))
+            foreach(var shape in SingleBodyShapes().Where(t=>t is not (Shape.Flat or Shape.Frame)))
             {
                 var s=new ModelSettings{Shape=shape,Width=48,Height=36,Diameter=40,Radius=40,Resolution=2};var before=MeshGenerator.Generate(new(1,1,[255]),s,false);s.HangingTabsEnabled=true;s.TabWidth=100;var after=MeshGenerator.Generate(new(1,1,[255]),s,false);Require(before.Vertices.SequenceEqual(after.Vertices)&&before.Triangles.SequenceEqual(after.Triangles),"Fremde Form verändert: "+shape);
             }

@@ -1,0 +1,42 @@
+<Window x:Class="LithoCreate.App.DesignPartsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Bauteile · LithoCreate Pro" Width="650" Height="590" MinWidth="460" MinHeight="380"
+        WindowStartupLocation="CenterOwner" Background="#06111C" Foreground="#DCEAF4"
+        FontFamily="Segoe UI" FontSize="13" Icon="/LithoCreate Pro;component/Assets/LithoCreate.ico">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24">
+      <TextBlock x:Name="Heading" Style="{StaticResource Heading}" TextWrapping="Wrap"/>
+      <TextBlock x:Name="Instructions" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+      <StackPanel x:Name="Controls">
+        <Border x:Name="MotifPanel" BorderBrush="#244357" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4,0,14">
+          <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="132"/></Grid.ColumnDefinitions>
+            <StackPanel Margin="0,0,12,0">
+              <TextBlock Text="Wandmotiv" FontWeight="SemiBold"/>
+              <ComboBox x:Name="WallChoice" SelectionChanged="WallChanged" AutomationProperties.Name="Wand auswählen" Margin="0,5,0,4"/>
+              <TextBlock x:Name="WallSource" Style="{StaticResource Muted}" Margin="0,0,0,5"/>
+              <WrapPanel>
+                <Button Content="Foto wählen …" Click="OpenWall" Margin="0,0,6,4"/>
+                <Button Content="Projektfoto verwenden" Click="ResetWall" Margin="0,0,0,4"/>
+              </WrapPanel>
+              <TextBox x:Name="WallText" MaxLength="150" AutomationProperties.Name="Textmotiv" Margin="0,5,0,5"/>
+              <Button x:Name="ApplyWallText" Content="Text als Motiv übernehmen" Click="UseText" HorizontalAlignment="Left"/>
+            </StackPanel>
+            <Border Grid.Column="1" Background="#101F2D" CornerRadius="6" Padding="5">
+              <Image x:Name="WallPreview" Height="132" Stretch="Uniform"/>
+            </Border>
+          </Grid>
+        </Border>
+        <TextBlock Text="Druckteile als ZIP" FontWeight="SemiBold"/>
+        <TextBlock x:Name="PrinterText" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+        <WrapPanel>
+          <Button Content="STL-ZIP speichern …" Click="ExportStl" Style="{StaticResource Primary}" Margin="0,0,6,4"/>
+          <Button Content="3MF-ZIP speichern …" Click="Export3Mf" Margin="0,0,0,4"/>
+        </WrapPanel>
+      </StackPanel>
+      <TextBlock x:Name="Status" TextWrapping="Wrap" Margin="0,10,0,6" MinHeight="24" Foreground="#91CFB6"/>
+      <Button x:Name="CancelExport" Content="Berechnung abbrechen" Visibility="Collapsed" Click="CancelWork" HorizontalAlignment="Left"/>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
