@@ -1,0 +1,53 @@
+name: Build and upload LithoCreate Pro 1.22.0
+on:
+  push:
+    branches: [codex/publish-v1.22.0]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6b5e6086dc527556dbcc04617d8bc00b0c54eabb
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.404'
+      - name: Build and verify Windows packages
+        shell: pwsh
+        run: |
+          ./build.ps1
+          python tools/check_package.py --version 1.22.0
+          if ($LASTEXITCODE -ne 0) { throw 'Package verification failed.' }
+          $files = 'LithoCreate-Pro-1.22.0-Setup.exe', 'LithoCreate-Pro-1.22.0-win-x64.msi', 'LithoCreate-Pro-1.22.0-portabel.zip'
+          Get-FileHash -LiteralPath ($files | ForEach-Object { Join-Path 'artifacts' $_ }) |
+            ForEach-Object { $_.Hash.ToLowerInvariant() + '  ' + [IO.Path]::GetFileName($_.Path) } |
+            Set-Content -LiteralPath artifacts/SHA256SUMS-1.22.0.txt -Encoding ascii
+      - name: Upload assets to the existing release draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = 'v1.22.0'
+          $head = (git rev-parse HEAD).Trim()
+          $releases = gh api "repos/$env:GITHUB_REPOSITORY/releases" | ConvertFrom-Json -AsHashtable
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot read the release list.' }
+          $draft = $releases | Where-Object { $_.tag_name -eq $tag -and $_.draft -and $_.target_commitish -eq $head }
+          if (@($draft).Count -ne 1) { throw 'Release draft for the verified commit is missing.' }
+          $files = 'LithoCreate-Pro-1.22.0-Setup.exe', 'LithoCreate-Pro-1.22.0-win-x64.msi', 'LithoCreate-Pro-1.22.0-portabel.zip', 'SHA256SUMS-1.22.0.txt'
+          $paths = @($files | ForEach-Object { Join-Path 'artifacts' $_ })
+          gh release upload $tag @paths --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
+          $uploaded = gh api "repos/$env:GITHUB_REPOSITORY/releases/$($draft.id)/assets" | ConvertFrom-Json -AsHashtable
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify uploaded assets.' }
+          foreach ($file in $paths) {
+            $source = Get-Item -LiteralPath $file
+            $asset = $uploaded | Where-Object { $_.name -eq $source.Name }
+            $digest = 'sha256:' + (Get-FileHash -LiteralPath $source.FullName).Hash.ToLowerInvariant()
+            if ($asset.state -ne 'uploaded' -or $asset.digest -ne $digest -or $asset.size -ne $source.Length) {
+              throw "Asset verification failed: $($source.Name)"
+            }
+          }
