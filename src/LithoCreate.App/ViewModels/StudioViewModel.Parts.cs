@@ -20,6 +20,7 @@ public sealed partial class StudioViewModel
     void NotifyParts()
     {
         Notify(nameof(SelectedShadeMount));
+        Notify(nameof(SelectedShadeMountStyle));
         NotifyDimensions();NotifyBackHoles();Notify(nameof(HasSocket));Notify(nameof(HasBackPanel));Notify(nameof(HasParts));Notify(nameof(BackEnabled));Notify(nameof(Parts));Notify(nameof(SelectedPart));Notify(nameof(SelectedPartKind));Notify(nameof(SocketEnabled));Notify(nameof(IsAssemblyPart));Notify(nameof(CanSlicePart));Notify(nameof(HasPhotoSurface));Notify(nameof(PartHint));Notify(nameof(PreviewTitle));NotifyPlacement();Notify(nameof(ExportHeading));
         if(!HasParts)IsPrintSetMode=false;if(IsAssemblyPart)IsSectionMode=false;CommandManager.InvalidateRequerySuggested();
     }

@@ -1,9 +1,13 @@
 namespace LithoCreate.Core;
 
 public enum ShadeMount { Open, Top, Bottom }
+public enum ShadeMountStyle { Plate, Spokes }
 
 public static class LampShade
 {
+    const double SpokeRingWidth = 4;
+    const int SpokeCount = 3;
+
     public static bool Supports(Shape shape) =>
         shape is Shape.CeilingShade or Shape.FloorShade or Shape.BellShade or Shape.FacetedShade;
 
@@ -18,8 +22,9 @@ public static class LampShade
                 Shape.FacetedShade => (115, 190, 145, ShadeMount.Open),
                 _ => throw new ArgumentException("Diese Vorlage ist kein Lampenschirm.")
             };
-        settings.ShadeMountDiameter = 42;
+        settings.ShadeMountDiameter = WorkshopParts.E27Opening;
         settings.ShadeMountThickness = 3;
+        settings.ShadeMountStyle = ShadeMountStyle.Spokes;
         settings.ShadeSides = 6;
     }
 
@@ -34,6 +39,8 @@ public static class LampShade
 
         if (!Enum.IsDefined(settings.ShadeMount))
             throw new InvalidDataException("Unbekannte Position für den Montagering.");
+        if (!Enum.IsDefined(settings.ShadeMountStyle))
+            throw new InvalidDataException("Unbekannte Form für den Montagering.");
         if (settings.IsFacetedShade && settings.ShadeSides is < 3 or > 16)
             throw new InvalidDataException("Facettenschirm: 3 bis 16 Seiten eingeben.");
 
@@ -54,7 +61,10 @@ public static class LampShade
         double rim = topMount ? top : bottom;
         double ringInsideY = topMount ? height - ringHeight : ringHeight;
         double innerDiameter = Math.Min(rim, DiameterAt(settings, ringInsideY / height)) * apothemFactor - 2 * settings.MaxThickness;
-        double maxHole = (innerDiameter - 3) * Math.Cos(Math.PI / 32);
+        double inset = settings.ShadeMountStyle == ShadeMountStyle.Spokes ? 2 * (SpokeRingWidth + 2) : 3;
+        double maxHole = (innerDiameter - inset) * Math.Cos(Math.PI / 32);
+        if (maxHole < 4 && settings.ShadeMountStyle == ShadeMountStyle.Spokes)
+            throw new InvalidDataException("Für den Strebenring den Schirmdurchmesser am Montagerand vergrößern.");
         if (hole < 4 || hole > maxHole)
             throw new InvalidDataException($"Freie Ringöffnung: mindestens 4 mm und bei diesen Schirmmaßen höchstens {Math.Floor(maxHole * 10) / 10:0.0} mm. Falls nötig, den Schirmdurchmesser am Montagerand vergrößern.");
     }
@@ -70,7 +80,9 @@ public static class LampShade
         double wallLengthBound = Math.Sqrt(height * height + Math.Pow(radiusDifference * slopeFactor, 2));
         int budget = preview ? 22000 : (int)Math.Min(1200000, (long)settings.MemoryMb * 1024 * 1024 / 600);
         double raster = Math.Max(settings.Resolution, Math.Sqrt(outerWidth * wallLengthBound / budget));
+        bool spokes = settings.ShadeMount != ShadeMount.Open && settings.ShadeMountStyle == ShadeMountStyle.Spokes;
         int alignment = settings.IsFacetedShade ? settings.ShadeSides * 4 : 4;
+        if (spokes && alignment % SpokeCount != 0) alignment *= SpokeCount;
         int columns = Math.Clamp((int)Math.Ceiling(outerWidth / raster / alignment), (32 + alignment - 1) / alignment, 2400 / alignment) * alignment;
         int rows = Math.Clamp((int)Math.Ceiling(wallLengthBound / raster), 4, Math.Min(2400, budget / columns));
         mesh.ActualResolution = Math.Max(outerWidth / columns, wallLengthBound / rows);
@@ -83,6 +95,8 @@ public static class LampShade
         for (int row = 1; row < rows; row++)
         {
             double y = height * row / rows;
+            // Keep the wall linear through the rim band alongside the spoke cut faces.
+            if (spokes && (y < innerBottom || y > innerTop)) continue;
             if (Math.Abs(y - innerBottom) > .0001 && Math.Abs(y - innerTop) > .0001) levels.Add(y);
         }
         levels.Sort();
@@ -151,12 +165,14 @@ public static class LampShade
 
         void Join(int a, int b, bool forward)
         {
-            for (int col = 0; col < columns; col++)
-            {
-                int next = (col + 1) % columns;
-                if (forward) mesh.Quad(a + col, a + next, b + next, b + col);
-                else mesh.Quad(a + col, b + col, b + next, a + next);
-            }
+            for (int col = 0; col < columns; col++) JoinSector(a, b, col, forward);
+        }
+
+        void JoinSector(int a, int b, int col, bool forward)
+        {
+            int next = (col + 1) % columns;
+            if (forward) mesh.Quad(a + col, a + next, b + next, b + col);
+            else mesh.Quad(a + col, b + col, b + next, a + next);
         }
 
         void CloseRim(int outside, int inside, double outerY, double innerY, bool top)
@@ -172,9 +188,61 @@ public static class LampShade
             for (int col = 0; col < columns; col++) Vertex(col, radius, outerY, 0, false);
             int bore = mesh.Vertices.Count;
             for (int col = 0; col < columns; col++) Vertex(col, radius, innerY, 0, false);
+            if (spokes)
+            {
+                CloseWithSpokes(outside, inside, outerY, innerY, top, rim, bore, radius);
+                return;
+            }
             Join(outside, rim, top);
             Join(rim, bore, top);
             Join(bore, inside, top);
+        }
+
+        void CloseWithSpokes(int outside, int inside, double outerY, double innerY, bool top,
+            int lowerBore, int upperBore, double boreRadius)
+        {
+            double apothem = DiameterAt(settings, outerY / height) * apothemFactor / 2;
+            int wallRim = mesh.Vertices.Count;
+            for (int col = 0; col < columns; col++)
+                Vertex(col, (apothem - settings.MaxThickness) / directions[col].FaceCosine, outerY, 0, false);
+            double ringRadius = boreRadius + SpokeRingWidth;
+            int outerRing = mesh.Vertices.Count;
+            for (int col = 0; col < columns; col++) Vertex(col, ringRadius, outerY, 0, false);
+            int innerRing = mesh.Vertices.Count;
+            for (int col = 0; col < columns; col++) Vertex(col, ringRadius, innerY, 0, false);
+
+            // Both faces of the center ring remain continuous. Only the three
+            // narrow sectors join the ring to the lip of the shade.
+            Join(outside, wallRim, top);
+            Join(outerRing, lowerBore, top);
+            Join(lowerBore, upperBore, top);
+            Join(upperBore, innerRing, top);
+            int period = columns / SpokeCount;
+            int halfWidth = Math.Max(1, (int)Math.Round(period * 16.0 / 240));
+            int first = period / 2 - halfWidth;
+            int last = period / 2 + halfWidth;
+            for (int col = 0; col < columns; col++)
+            {
+                int sector = col % period;
+                if (sector >= first && sector < last)
+                {
+                    JoinSector(wallRim, outerRing, col, top);
+                    JoinSector(innerRing, inside, col, top);
+                }
+                else
+                {
+                    JoinSector(wallRim, inside, col, top);
+                    JoinSector(outerRing, innerRing, col, !top);
+                }
+
+                // Close the cut faces between each spoke and its adjacent gaps.
+                if (sector == first || sector == last)
+                {
+                    int a = outerRing + col, b = wallRim + col, c = inside + col, d = innerRing + col;
+                    if ((sector == first) != top) mesh.Quad(a, b, c, d);
+                    else mesh.Quad(a, d, c, b);
+                }
+            }
         }
     }
 

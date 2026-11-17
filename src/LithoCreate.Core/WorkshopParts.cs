@@ -8,7 +8,10 @@ public sealed record WorkshopPreset(string Name,WorkshopKind Kind,double A,doubl
 }
 public static class WorkshopParts
 {
-    public static readonly WorkshopPreset[] Presets=[new("LED-Streifen 8 mm · U-Halter",WorkshopKind.LedChannel,8.5,50,2),new("LED-Streifen 10 mm · U-Halter",WorkshopKind.LedChannel,10.5,50,2),new("E14 · Durchlass nach Maß",WorkshopKind.SocketRing,28.5,50,3),new("E27 · Durchlass nach Maß",WorkshopKind.SocketRing,40.5,65,3),new("Diffusorplatte · Probestück",WorkshopKind.Diffuser,100,80,1.2),new("Winkelstütze",WorkshopKind.Support,40,30,3),new("Montageplatte · freie Bohrungen",WorkshopKind.MountingPlate,60,40,3)];
+    public const double E14Opening = 28.5;
+    public const double E27Opening = 40.5;
+
+    public static readonly WorkshopPreset[] Presets=[new("LED-Streifen 8 mm · U-Halter",WorkshopKind.LedChannel,8.5,50,2),new("LED-Streifen 10 mm · U-Halter",WorkshopKind.LedChannel,10.5,50,2),new("E14 · Durchlass nach Maß",WorkshopKind.SocketRing,E14Opening,50,3),new("E27 · Durchlass nach Maß",WorkshopKind.SocketRing,E27Opening,65,3),new("Diffusorplatte · Probestück",WorkshopKind.Diffuser,100,80,1.2),new("Winkelstütze",WorkshopKind.Support,40,30,3),new("Montageplatte · freie Bohrungen",WorkshopKind.MountingPlate,60,40,3)];
     public static Mesh Generate(WorkshopKind kind,double a,double b,double thickness,CancellationToken token=default,IReadOnlyList<MountingHole>? holes=null)
     {
         if(!Enum.IsDefined(kind)||!new[]{a,b,thickness}.All(double.IsFinite)||a is < 2 or > 250||b is < 2 or > 250||thickness is < .6 or > 10)throw new InvalidDataException("Halterung: Maße 2–250 mm, Wandstärke 0,6–10 mm eingeben.");

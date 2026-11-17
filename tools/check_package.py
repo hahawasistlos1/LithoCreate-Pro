@@ -9,13 +9,14 @@ from zipfile import ZipFile
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--version',default='1.21.0')
+    parser.add_argument('--version',default='1.21.2')
     parser.add_argument('--format',type=int,default=15)
     parser.add_argument('--examples',type=int)
     args=parser.parse_args();version=args.version
     if not all(p.isdigit() for p in version.split('.')) or len(version.split('.'))!=3:
         raise ValueError('Expected a numeric three-part version')
     has_shades=tuple(map(int,version.split('.'))) >= (1,21,0)
+    has_spokes=tuple(map(int,version.split('.'))) >= (1,21,1)
     expected_examples=args.examples if args.examples is not None else 16 if has_shades else 12
     folder=Path('artifacts')/f'portable-{version}'
     archive=Path('artifacts')/f'LithoCreate-Pro-{version}-portabel.zip'
@@ -47,6 +48,8 @@ def main():
                     model=settings['Model']
                     if model['Shape'] in (15,16,17,18):
                         shade_examples[model['Shape']]=(model['ShadeTopDiameter'],model['ShadeBottomDiameter'],model['ShadeHeight'],model['ShadeMount'])
+                        if has_spokes:
+                            assert model['ShadeMountStyle']==1
                     if model.get('LockDimensions',False):size_examples.append({'file':name,'width':model['Width'],'height':model['Height']})
                     if model.get('HangingTabsEnabled',False):tab_examples.append({'file':name,'model':model})
                     edits=settings['Edits']

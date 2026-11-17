@@ -100,6 +100,7 @@ public sealed class ModelSettings
     public ShadeMount ShadeMount { get; set; }
     public double ShadeMountDiameter { get; set; } = 42;
     public double ShadeMountThickness { get; set; } = 3;
+    public ShadeMountStyle ShadeMountStyle { get; set; }
     public int ShadeSides { get; set; } = 6;
     public bool StandEnabled { get; set; }
     public double StandHeight { get; set; } = 5;

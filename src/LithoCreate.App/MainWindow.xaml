@@ -1,4 +1,4 @@
-<Window x:Class="LithoCreate.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LithoCreate.App" xmlns:controls="clr-namespace:LithoCreate.App.Controls" xmlns:core="clr-namespace:LithoCreate.Core;assembly=LithoCreate.Core" Title="{Binding WindowTitle}" Background="#060F19" Foreground="#EAF5FF" FontFamily="Segoe UI" FontSize="13" Width="1400" Height="900" MinWidth="960" MinHeight="540" Icon="/LithoCreate Pro;component/Assets/LithoCreate.ico" WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="OnDrop">
+<Window x:Class="LithoCreate.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:LithoCreate.App" xmlns:controls="clr-namespace:LithoCreate.App.Controls" xmlns:core="clr-namespace:LithoCreate.Core;assembly=LithoCreate.Core" Title="{Binding WindowTitle}" Background="#060F19" Foreground="#EAF5FF" FontFamily="Segoe UI" FontSize="13" Width="1280" Height="760" MinWidth="960" MinHeight="500" Icon="/LithoCreate Pro;component/Assets/LithoCreate.ico" WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="OnDrop">
  <Window.Resources>
   <BooleanToVisibilityConverter x:Key="Bool"/><local:InverseVisibilityConverter x:Key="Not"/>
   <local:StepBrushConverter x:Key="StepBrush"/>
@@ -213,6 +213,16 @@
            </ComboBox>
            <StackPanel>
             <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding SelectedShadeMount}" Value="{x:Static core:ShadeMount.Open}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+            <TextBlock Text="Bauart des Montagerings"/>
+            <ComboBox x:Name="ShadeMountStyleCombo" SelectedValuePath="Tag" SelectedValue="{Binding SelectedShadeMountStyle,Mode=TwoWay}" AutomationProperties.Name="Bauart des Montagerings">
+             <ComboBoxItem Tag="{x:Static core:ShadeMountStyle.Spokes}" Content="Offen mit 3 Streben"/>
+             <ComboBoxItem Tag="{x:Static core:ShadeMountStyle.Plate}" Content="Durchgehende Platte"/>
+            </ComboBox>
+            <TextBlock Text="Startmaß für die Schirmöffnung"/>
+            <WrapPanel>
+             <Button x:Name="ShadeE14Button" Content="E14 · 28,5 mm" Tag="{x:Static core:WorkshopParts.E14Opening}" Click="ApplyShadeOpening" Padding="8,6" Margin="0,0,6,4"/>
+             <Button x:Name="ShadeE27Button" Content="E27 · 40,5 mm" Tag="{x:Static core:WorkshopParts.E27Opening}" Click="ApplyShadeOpening" Padding="8,6" Margin="0,0,0,4"/>
+            </WrapPanel>
             <TextBlock Text="Freie Ringöffnung · Ø mm"/><TextBox x:Name="ShadeMountDiameterBox" Text="{Binding Model.ShadeMountDiameter,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Freie Ringöffnung"/>
             <TextBlock Text="Ringstärke · mm"/><TextBox Text="{Binding Model.ShadeMountThickness,UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Ringstärke"/>
             <TextBlock Text="Montagemaß am LED-Schirmträger messen. Für den Druck den Ring zum Druckbett drehen und Überhänge im Slicer prüfen. Bei Deckenmontage einen tragfähigen Schirmträger verwenden." Style="{StaticResource Muted}" FontSize="11" Margin="0,4,0,8"/>

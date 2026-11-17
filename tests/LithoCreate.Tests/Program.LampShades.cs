@@ -13,9 +13,11 @@ partial class Program
             {
                 var settings = new ModelSettings { Shape = template.Shape, Resolution = 1 };
                 LampShade.ApplyTemplate(settings);
+                foreach (var style in Enum.GetValues<ShadeMountStyle>())
                 foreach (var mount in Enum.GetValues<ShadeMount>())
                 {
                     settings.ShadeMount = mount;
+                    settings.ShadeMountStyle = style;
                     settings.ShadeMountDiameter = 37.4;
                     var mesh = MeshGenerator.Generate(panorama, settings, false);
                     var report = mesh.Validate();
@@ -24,8 +26,9 @@ partial class Program
                     foreach (double y in new[] { .613, settings.ShadeHeight - .613 })
                     {
                         var cut = index.Slice(y);
-                        Require(cut.IsRegular && cut.ClosedContours == 2, "Hohlraum bzw. Ringöffnung fehlt.");
                         bool expectBore = y < settings.ShadeHeight / 2 ? mount == ShadeMount.Bottom : mount == ShadeMount.Top;
+                        int contours = expectBore && style == ShadeMountStyle.Spokes ? 5 : 2;
+                        Require(cut.IsRegular && cut.ClosedContours == contours, "Hohlraum, Ringöffnung oder die drei Zwischenräume zwischen den Streben fehlen.");
                         var hole = cut.Paths.MinBy(path => path.Points.Max(p => p.LengthSquared()))!;
                         double clearance = hole.Points.Select((point, i) => DistanceToEdge(point, hole.Points[(i + 1) % hole.Points.Count])).Min() * 2;
                         if (expectBore) Require(Math.Abs(clearance - settings.ShadeMountDiameter) < .01, "Freie Ringöffnung weicht vom Eingabemaß ab.");
@@ -47,11 +50,20 @@ partial class Program
                 string project = Path.Combine(output, template.Shape + "-Schirm.lithopro");
                 ProjectStore.Save(project, new() { Model = settings }, [1, 2, 3]);
                 var loaded = ProjectStore.Load(project).Data.Model;
-                Require(loaded.Shape == settings.Shape && loaded.ShadeMount == settings.ShadeMount &&
+                Require(loaded.Shape == settings.Shape && loaded.ShadeMount == settings.ShadeMount && loaded.ShadeMountStyle == settings.ShadeMountStyle &&
                     loaded.ShadeBottomDiameter == settings.ShadeBottomDiameter && loaded.ShadeMountDiameter == settings.ShadeMountDiameter,
                     "Die gespeicherten Einstellungen für den Schirm fehlen.");
             });
         }
+
+        Test("Lampenschirm: alter Montagering ohne Bauart bleibt eine Platte", () =>
+        {
+            var settings = System.Text.Json.JsonSerializer.Deserialize<ModelSettings>("""{"Shape":15,"ShadeMount":1}""")!;
+            Require(settings.ShadeMountStyle == ShadeMountStyle.Plate, "Alte Einstellungen wurden auf Streben umgestellt.");
+            var mesh = MeshGenerator.Generate(panorama, settings, true);
+            Require(new CrossSectionIndex(mesh).Slice(settings.ShadeHeight - .613).ClosedContours == 2,
+                "Alter Montagering ist nicht geschlossen.");
+        });
 
         Test("Lampenschirm: unpassende Ringöffnung und ungültige Maße", () =>
         {

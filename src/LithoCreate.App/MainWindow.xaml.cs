@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();Language=System.Windows.Markup.XmlLanguage.GetLanguage("de-DE");
+        WindowWorkArea.KeepVisible(this);
         vm=new();DataContext=vm;QuickShapes.ItemsSource=vm.OtherShapes.Take(3).Concat(vm.ShadeShapes.Take(2));
         vm.MeshReady+=(mesh,image)=>Viewport.SetMesh(mesh,image);
         vm.PreviewCleared+=Viewport.Clear;
@@ -62,6 +63,17 @@ public partial class MainWindow : Window
         Closing+=OnClosing;
     }
     void UpdateCompactLayout(){bool compact=ActualHeight>0&&ActualHeight<700;EditorTitleRow.Height=new GridLength(compact?0:78);EditorTitlePanel.Visibility=compact?Visibility.Collapsed:Visibility.Visible;}
+    void ApplyShadeOpening(object sender, RoutedEventArgs e)
+    {
+        if (vm is null || vm.Busy || !vm.Model.IsShade || vm.Model.ShadeMount == ShadeMount.Open ||
+            sender is not Button { Tag: double diameter })
+            return;
+
+        vm.Model.ShadeMountDiameter = diameter;
+        ShadeMountDiameterBox.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+        vm.RefreshNumericValidation(HasInvalidInput(this));
+        vm.Changed();
+    }
     void OpenMeshTools(object sender,RoutedEventArgs e){if(vm==null)return;if(vm.Busy||vm.InputError){vm.Status="Zuerst die laufende Berechnung beenden oder die ungültige Eingabe korrigieren.";return;}try{new MeshToolsWindow(vm){Owner=this}.Show();}catch(Exception ex){vm.Status=ex.Message;}}
     void OnEditText(object sender,TextChangedEventArgs e)
     {

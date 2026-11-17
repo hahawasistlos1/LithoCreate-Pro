@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LithoCreate.App;
@@ -14,7 +15,20 @@ partial class Program
     static int RenderDpi(string directory)
     {
         Directory.CreateDirectory(directory);Environment.SetEnvironmentVariable("LITHOCREATE_DATA_DIR",Path.Combine(Path.GetFullPath(directory),"data"));
-        var app=new Application();app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("pack://application:,,,/LithoCreate Pro;component/Theme.xaml")});var window=new MainWindow();window.Show();var vm=(StudioViewModel)window.DataContext;var load=vm.UpdatePreview();PumpUntil(()=>load.IsCompleted);var results=new List<object>();string fixture=Path.Combine(Path.GetFullPath(directory),"dpi-import.stl");ModelExporter.Export(fixture,MeshGenerator.Generate(new(1,1,[255]),new(){Width=40,Height=30,MinThickness=3,MaxThickness=3,FrameWidth=0,Resolution=2},false));
+        var app=new Application();app.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("pack://application:,,,/LithoCreate Pro;component/Theme.xaml")});
+        Rect primaryWork = SystemParameters.WorkArea;
+        var window=new MainWindow
+        {
+            WindowStartupLocation=WindowStartupLocation.Manual,
+            Left=primaryWork.Left-120, Top=primaryWork.Top-90,
+            Width=primaryWork.Width+330, Height=primaryWork.Height+240
+        };
+        window.Show();
+        var vm=(StudioViewModel)window.DataContext;var load=vm.UpdatePreview();PumpUntil(()=>load.IsCompleted);
+        nint windowHandle = new WindowInteropHelper(window).Handle;
+        Require(WindowWorkArea.TryReadBounds(windowHandle, out Rect work, out Rect frame) && work.Contains(frame),
+            "Das übergroße Startfenster liegt nicht vollständig in der Arbeitsfläche.");
+        var results=new List<object>();string fixture=Path.Combine(Path.GetFullPath(directory),"dpi-import.stl");ModelExporter.Export(fixture,MeshGenerator.Generate(new(1,1,[255]),new(){Width=40,Height=30,MinThickness=3,MaxThickness=3,FrameWidth=0,Resolution=2},false));
         foreach(double scale in new[]{1.25,1.5,2})
         {
             window.Width=1920/scale;window.Height=1080/scale;
@@ -25,6 +39,7 @@ partial class Program
             }
             var shadePanel=(FrameworkElement)window.FindName("LampShadePanel");
             var shadeMount=(ComboBox)window.FindName("ShadeMountCombo");
+            var shadeMountStyle=(ComboBox)window.FindName("ShadeMountStyleCombo");
             foreach (var shade in vm.ShadeShapes)
             {
                 vm.SelectTemplate.Execute(shade);
@@ -37,6 +52,39 @@ partial class Program
                     "Lampenschirm ist im Editor nicht korrekt sichtbar oder ausgewählt.");
                 ((ScrollViewer)window.FindName("OptionsScroller")).ScrollToTop();
                 Capture(window,$"DPI-{scale*100:0}-{shade.Shape}",scale);
+                if (shade.Shape == Shape.CeilingShade)
+                {
+                    Require(shadeMountStyle.IsVisible && Equals(shadeMountStyle.SelectedValue, ShadeMountStyle.Spokes),
+                        "Die Schirmvorlage zeigt nicht den offenen Strebenring an.");
+                    shadeMountStyle.SetCurrentValue(ComboBox.SelectedValueProperty, ShadeMountStyle.Plate);
+                    Require(vm.Model.ShadeMountStyle == ShadeMountStyle.Plate, "Die Auswahl der Platte kommt im Modell nicht an.");
+                    shadeMountStyle.SetCurrentValue(ComboBox.SelectedValueProperty, ShadeMountStyle.Spokes);
+                    Require(vm.Model.ShadeMountStyle == ShadeMountStyle.Spokes, "Die Auswahl der Streben kommt im Modell nicht an.");
+                    var opening = (TextBox)window.FindName("ShadeMountDiameterBox");
+                    foreach (var (name, diameter) in new[] { ("ShadeE14Button", 28.5), ("ShadeE27Button", 40.5) })
+                    {
+                        var presetButton = (Button)window.FindName(name);
+                        presetButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        Require(vm.Model.ShadeMountDiameter == diameter &&
+                            double.Parse(opening.Text, System.Globalization.CultureInfo.GetCultureInfo("de-DE")) == diameter,
+                            "Fassungsvorgabe kommt nicht im Lochmaß und im Modell an.");
+                        var updated = vm.UpdatePreview();
+                        PumpUntil(() => updated.IsCompleted);
+                        Require(vm.PreviewMesh != null, "Vorschau für das neue Lochmaß fehlt.");
+                        var cut = new CrossSectionIndex(vm.PreviewMesh!).Slice(vm.Model.ShadeHeight - .613);
+                        var bore = cut.Paths.MinBy(path => path.Points.Max(p => p.LengthSquared()))!;
+                        double actual = bore.Points.Select((point, i) =>
+                            DistanceToEdge(point, bore.Points[(i + 1) % bore.Points.Count])).Min() * 2;
+                        Require(cut.ClosedContours == 5 && Math.Abs(actual - diameter) < .01,
+                            "Das Vorschaumodell hat eine andere Ringöffnung.");
+                    }
+                    var spokes = vm.UpdatePreview();
+                    PumpUntil(() => spokes.IsCompleted);
+                    vm.Camera.Execute("top");
+                    opening.BringIntoView();
+                    Capture(window,$"DPI-{scale*100:0}-Strebenring",scale);
+                    vm.Camera.Execute("reset");
+                }
             }
             vm.SelectedShape=vm.OtherShapes.First();
             var tools=new MeshToolsWindow(vm){Owner=window,Width=1920/scale,Height=1080/scale};tools.Show();var import=tools.ImportFile(fixture);PumpUntil(()=>import.IsCompleted);Require(((Button)tools.FindName("ExportButton")).IsEnabled,"Importierter Körper nicht exportierbar.");Capture(tools,$"DPI-{scale*100:0}-STL",scale);

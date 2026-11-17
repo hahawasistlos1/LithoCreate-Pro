@@ -102,6 +102,17 @@ public sealed partial class StudioViewModel : INotifyPropertyChanged
             Changed();
         }
     }
+    public ShadeMountStyle SelectedShadeMountStyle
+    {
+        get=>Model.ShadeMountStyle;
+        set
+        {
+            if(value==Model.ShadeMountStyle) return;
+            Model.ShadeMountStyle=value;
+            Notify();
+            Changed();
+        }
+    }
 
     public ICommand Navigate {get;} public ICommand GoStep {get;} public ICommand Next {get;} public ICommand Back {get;}
     public ICommand LoadPhoto {get;} public ICommand OpenProject {get;} public ICommand Save {get;} public ICommand SaveAs {get;} public ICommand New {get;} public ICommand SelectTemplate {get;}
